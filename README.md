@@ -10,7 +10,7 @@ Contraseña de todas las cuentas: `Meridiano2026!`
 
 | Perfil | Correo | Qué ve |
 |---|---|---|
-| Equipo | `sofia.rojas@academiameridiano.cr` | 3 carpetas. Lee, descarga, confirma avisos y asistencia |
+| Equipo | `sofia.rojas@academiameridiano.cr` | 3 carpetas. Lee, descarga, confirma avisos y asistencia, pone su foto |
 | Responsables | `andres.vargas@academiameridiano.cr` | 4 carpetas. Además publica avisos, documentos, versiones y eventos y ve quién leyó |
 | Administración | `laura.mendez@academiameridiano.cr` | 5 carpetas. Además gestiona usuarios, carpetas y permisos, y exporta lecturas |
 
@@ -38,6 +38,7 @@ El resto del equipo de ejemplo (14 personas) usa la misma contraseña.
 src/
   marca.ts            ← nombre, logo, colores y cuentas demo (todo lo reemplazable)
   estilos.css         ← estilos (tokens de color al inicio)
+  estilos-extra.css   ← ajustes de componentes añadidos tras las pruebas en móvil
   lib/                ← conexión Supabase, sesión, descargas seguras, extracción de texto
   components/         ← estructura, íconos, avatar, anillo de lecturas
   pages/              ← pantallas; pages/gestion/ = panel de gestión
@@ -65,7 +66,7 @@ La conexión a Supabase está en `src/marca.ts` (la clave *anon* es pública por
 
 - **Logo:** reemplazar `public/marca/logo.svg` (se usa también como favicon).
 - **Colores y nombre:** `src/marca.ts`.
-- **Fotos del directorio:** *Gestión → Usuarios → Subir foto*. Sin foto se muestran iniciales.
+- **Fotos del directorio:** cada persona desde *Más → Agregar foto*, o administración desde *Gestión → Usuarios → Subir foto*. Se recortan y reducen solas antes de subirse. Sin foto se muestran iniciales.
 - **Personas, carpetas y documentos reales:** se cargan desde *Gestión*, sin tocar código.
 - **Producción:** poner `mostrarCuentasDemo: false` en `src/marca.ts` y desactivar o borrar las cuentas de ejemplo.
 
