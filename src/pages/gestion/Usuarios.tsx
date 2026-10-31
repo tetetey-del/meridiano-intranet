@@ -6,6 +6,7 @@ import { normalizarTexto } from "../../lib/texto";
 import { Cabecera, Cargando, Mensaje } from "../../components/Comunes";
 import { Avatar } from "../../components/Avatar";
 import { Icono } from "../../components/Icono";
+import { CampoContrasena } from "../../components/CampoContrasena";
 
 const PERFILES: Perfil[] = ["equipo", "responsable", "admin"];
 const vacio = { full_name: "", email: "", password: "", role: "equipo" as Perfil, puesto: "", area: "", phone: "" };
@@ -54,7 +55,7 @@ export default function Usuarios() {
           <label>Nombre y apellidos<input required value={f.full_name} onChange={(e) => setF({ ...f, full_name: e.target.value })} /></label>
           <div className="dos">
             <label>Correo<input type="email" required value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></label>
-            <label>Contraseña inicial<input required minLength={8} value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} placeholder="Mínimo 8 caracteres" /></label>
+            <label>Contraseña inicial<CampoContrasena required minLength={8} autoComplete="new-password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} placeholder="Mínimo 8 caracteres" /></label>
           </div>
           <div className="dos">
             <label>Puesto<input value={f.puesto} onChange={(e) => setF({ ...f, puesto: e.target.value })} /></label>
@@ -150,7 +151,7 @@ function Editor({ p, esYo, onListo }: { p: Profile; esYo: boolean; onListo: (m: 
         {p.avatar_url && <button className="btn texto" onClick={quitarFoto}>Quitar foto</button>}
       </div>
       <div className="editor-extra">
-        <input aria-label="Nueva contraseña" placeholder="Nueva contraseña (mín. 8)" value={pass} onChange={(e) => setPass(e.target.value)} />
+        <CampoContrasena aria-label="Nueva contraseña" autoComplete="new-password" placeholder="Nueva contraseña (mín. 8)" value={pass} onChange={(e) => setPass(e.target.value)} />
         <button className="btn secundario" disabled={pass.length < 8} onClick={cambiarPass}>Cambiar contraseña</button>
       </div>
       {!esYo && (p.active
