@@ -31,10 +31,13 @@ El resto del equipo de ejemplo (14 personas) usa la misma contraseña.
 - **La academia y su marca:** nombre, logotipo y colores son inventados para la demo, libres de derechos.
 - **El equipo:** las 14 personas, sus correos (dominio ficticio `@academiameridiano.cr`, no reciben correo) y sus teléfonos son ficticios. Las fotos del directorio son iniciales generadas.
 - **El contenido:** los 8 documentos (PDF con texto real, para probar la búsqueda), los 5 avisos, las lecturas ya confirmadas y los 4 eventos son de ejemplo.
-- **No se envían correos.** Administración da de alta las cuentas con una contraseña inicial y la cambia si alguien la olvida.
+- **Correos: no se envían.** No hay correos de bienvenida, de recuperación de contraseña ni de aviso. Cómo se comporta: Administración crea la cuenta con una contraseña inicial en *Gestión → Usuarios* y se la pasa a la persona; si alguien la olvida, Administración le pone una nueva desde la misma pantalla. Los avisos nuevos se ven al entrar (en *Inicio* y con un número en *Avisos*), no llegan por correo.
+- **Pagos y WhatsApp: no hay.** El encargo no los incluye, así que no existen ni simulados. Los botones de correo y teléfono del *Directorio* abren la app de correo o de llamadas del dispositivo.
 - **Lo que sí es real:** la autenticación, la base de datos con sus permisos por perfil, el almacenamiento privado de archivos y el tiempo real funcionan sobre un proyecto de Supabase, así que lo que se prueba se guarda de verdad.
 
 ## Cómo reiniciar los datos de ejemplo
+
+Los datos **no** se guardan en el navegador (localStorage) sino en la base de datos, compartidos entre todas las cuentas. Por eso borrar el localStorage solo cierra la sesión y no reinicia nada. Para reiniciar:
 
 Entrá con la cuenta de **Administración** (`laura.mendez@academiameridiano.cr`) y andá a **Gestión → Reiniciar datos de ejemplo**. La demo vuelve a como estaba al principio:
 
