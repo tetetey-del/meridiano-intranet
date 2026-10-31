@@ -1,75 +1,59 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useParams } from "react-router-dom";
-import { supabase, Doc, Version, Folder } from "../lib/supabase";
-import { useAuth } from "../lib/auth";
+import { documento as buscarDocumento, persona, subirVersion, marcarVigente, archivoDeVersion, Version } from "../lib/datos";
+import { useAuth, useCambios } from "../lib/auth";
 import { fechaHora, tamano } from "../lib/formato";
-import { descargar } from "../lib/archivos";
-import { subirVersion, ACEPTA } from "../lib/subir";
-import { Cabecera, Cargando, Mensaje, Vacio } from "../components/Comunes";
+import { entregarArchivo, extraerTexto, ACEPTA } from "../lib/archivos";
+import { Cabecera, Mensaje, Vacio } from "../components/Comunes";
 import { Icono } from "../components/Icono";
 import { SelectorArchivo } from "../components/SelectorArchivo";
 
 export default function Documento() {
-  const { id } = useParams();
-  const { profile, esGestor } = useAuth();
-  const [doc, setDoc] = useState<(Doc & { folders: Folder }) | null | undefined>(undefined);
-  const [versiones, setVersiones] = useState<Version[]>([]);
-  const [autores, setAutores] = useState<Record<string, string>>({});
+  const { id = "" } = useParams();
+  const { esGestor } = useAuth();
+  useCambios();
   const [form, setForm] = useState(false);
   const [file, setFile] = useState<File | null>(null); const [notas, setNotas] = useState("");
   const [subiendo, setSubiendo] = useState(false);
   const [msg, setMsg] = useState<{ t: "ok" | "error"; m: string } | null>(null);
 
-  const cargar = useCallback(async () => {
-    const { data: d } = await supabase.from("documents").select("*, folders(*)").eq("id", id!).maybeSingle();
-    setDoc(d as any);
-    if (!d) return;
-    const { data: v } = await supabase.from("document_versions").select("*").eq("document_id", id!).order("version_number", { ascending: false });
-    setVersiones((v ?? []) as Version[]);
-    const ids = [...new Set((v ?? []).map((x) => x.uploaded_by).filter(Boolean))];
-    if (ids.length) {
-      const { data: p } = await supabase.from("profiles").select("id, full_name").in("id", ids as string[]);
-      setAutores(Object.fromEntries((p ?? []).map((x) => [x.id, x.full_name])));
-    }
-  }, [id]);
-  useEffect(() => { cargar(); }, [cargar]);
+  // Si el perfil no puede ver la carpeta, el documento no se entrega: ni por la lista ni escribiendo la dirección a mano.
+  const doc = buscarDocumento(id);
+  if (!doc) return (
+    <div className="pagina"><Cabecera titulo="Documento no disponible" volver="/documentos" />
+      <Vacio titulo="Este documento no existe o tu perfil no tiene acceso a su carpeta." /></div>
+  );
+  const vigente = doc.versiones.find((v) => v.is_current);
+  const anteriores = doc.versiones.filter((v) => !v.is_current);
+  const autor = (v: Version) => persona(v.uploaded_by)?.full_name;
 
-  async function bajar(v: Version, abrir = false) {
+  function bajar(v: Version, abrir = false) {
     setMsg(null);
-    try { await descargar("documentos", v.file_path, v.file_name, abrir); } catch (e: any) { setMsg({ t: "error", m: e.message }); }
+    try { const a = archivoDeVersion(v.id); entregarArchivo(a.blob, a.nombre, abrir); }
+    catch (e: any) { setMsg({ t: "error", m: e.message }); }
   }
 
   async function nuevaVersion(e: FormEvent) {
     e.preventDefault();
-    if (!file || !doc || !profile) return;
+    if (!file) return;
     setSubiendo(true); setMsg(null);
     try {
-      await subirVersion(doc.folder_id, doc.id, file, notas.trim(), profile.id);
+      await subirVersion(id, file, notas, await extraerTexto(file));
       setForm(false); setFile(null); setNotas("");
-      await cargar();
       setMsg({ t: "ok", m: "Versión nueva subida. La anterior queda guardada en el historial." });
     } catch (e: any) { setMsg({ t: "error", m: e.message }); }
     setSubiendo(false);
   }
 
-  async function hacerVigente(v: Version) {
+  function hacerVigente(v: Version) {
     if (!confirm(`¿Marcar la versión ${v.version_number} como vigente? La versión actual seguirá en el historial.`)) return;
-    const { error } = await supabase.rpc("marcar_vigente", { version_id: v.id });
-    if (error) setMsg({ t: "error", m: "No se pudo cambiar la versión vigente." });
-    else { await cargar(); setMsg({ t: "ok", m: `La versión ${v.version_number} es ahora la vigente.` }); }
+    try { marcarVigente(v.id); setMsg({ t: "ok", m: `La versión ${v.version_number} es ahora la vigente.` }); }
+    catch (e: any) { setMsg({ t: "error", m: e.message }); }
   }
-
-  if (doc === undefined) return <Cargando />;
-  if (doc === null) return (
-    <div className="pagina"><Cabecera titulo="Documento no disponible" volver="/documentos" />
-      <Vacio titulo="Este documento no existe o tu perfil no tiene acceso a su carpeta." /></div>
-  );
-  const vigente = versiones.find((v) => v.is_current);
-  const anteriores = versiones.filter((v) => !v.is_current);
 
   return (
     <div className="pagina estrecha">
-      <Cabecera titulo={doc.title} volver={`/documentos/${doc.folder_id}`} sub={<span className="sub-carpeta"><Icono n="carpeta" size={15} /> {doc.folders?.name}{doc.description && ` · ${doc.description}`}</span>} />
+      <Cabecera titulo={doc.title} volver={`/documentos/${doc.folder_id}`} sub={<span className="sub-carpeta"><Icono n="carpeta" size={15} /> {doc.carpeta.name}{doc.description && ` · ${doc.description}`}</span>} />
 
       {msg && <Mensaje tipo={msg.t}>{msg.m}</Mensaje>}
 
@@ -79,7 +63,7 @@ export default function Documento() {
             <span className="sello-vigente">Vigente</span>
             <h2 id="t-vig" className="h3">Versión {vigente.version_number}</h2>
           </div>
-          <p className="vigente-archivo"><Icono n="archivo" /> <span><b>{vigente.file_name}</b><small>{tamano(vigente.size_bytes)} · {fechaHora(vigente.created_at)}{vigente.uploaded_by && autores[vigente.uploaded_by] && ` · ${autores[vigente.uploaded_by]}`}</small></span></p>
+          <p className="vigente-archivo"><Icono n="archivo" /> <span><b>{vigente.file_name}</b><small>{tamano(vigente.size_bytes)} · {fechaHora(vigente.created_at)}{autor(vigente) && ` · ${autor(vigente)}`}</small></span></p>
           {vigente.notes && <p className="notas">{vigente.notes}</p>}
           <div className="acciones">
             <button className="btn primario grande" onClick={() => bajar(vigente)}><Icono n="descargar" size={18} /> Descargar</button>
@@ -92,7 +76,7 @@ export default function Documento() {
         form ? (
           <form className="panel form" onSubmit={nuevaVersion}>
             <h2 className="h3">Subir versión nueva</h2>
-            <p className="ayuda">Pasará a ser la versión {(versiones[0]?.version_number ?? 0) + 1} vigente. La actual se conserva en el historial.</p>
+            <p className="ayuda">Pasará a ser la versión {(doc.versiones[0]?.version_number ?? 0) + 1} vigente. La actual se conserva en el historial.</p>
             <SelectorArchivo etiqueta="Archivo de la nueva versión" accept={ACEPTA} requerido archivos={file ? [file] : []} onCambio={(f) => setFile(f[0] ?? null)} />
             <label>Qué cambió (opcional)<input value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Ej.: nuevo plazo de pago" /></label>
             <div className="acciones">
@@ -112,7 +96,7 @@ export default function Documento() {
                 <span className="hist-num">v{v.version_number}</span>
                 <span className="fila-txt">
                   <b>{v.file_name}</b>
-                  <small>{fechaHora(v.created_at)}{v.uploaded_by && autores[v.uploaded_by] && ` · ${autores[v.uploaded_by]}`}{v.notes && ` · ${v.notes}`}</small>
+                  <small>{fechaHora(v.created_at)}{autor(v) && ` · ${autor(v)}`}{v.notes && ` · ${v.notes}`}</small>
                   <small className="no-vigente">No vigente: no usar para trabajar</small>
                 </span>
                 <span className="hist-acc">

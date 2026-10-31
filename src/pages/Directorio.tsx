@@ -1,18 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
-import { supabase, Profile } from "../lib/supabase";
+import { useMemo, useState } from "react";
+import { personas } from "../lib/datos";
+import { useCambios } from "../lib/auth";
 import { normalizarTexto } from "../lib/texto";
-import { Cabecera, Cargando, Vacio } from "../components/Comunes";
+import { Cabecera, Vacio } from "../components/Comunes";
 import { Avatar } from "../components/Avatar";
 import { Icono } from "../components/Icono";
 
 export default function Directorio() {
-  const [gente, setGente] = useState<Profile[] | null>(null);
+  const cambios = useCambios();
+  const gente = useMemo(() => personas(), [cambios]);
   const [q, setQ] = useState(""); const [area, setArea] = useState("Todas");
-  useEffect(() => {
-    supabase.from("profiles").select("*").eq("active", true).order("full_name").then(({ data }) => setGente((data ?? []) as Profile[]));
-  }, []);
-  const areas = useMemo(() => ["Todas", ...[...new Set((gente ?? []).map((p) => p.area).filter(Boolean))].sort()], [gente]);
-  if (!gente) return <Cargando />;
+  const areas = useMemo(() => ["Todas", ...[...new Set(gente.map((p) => p.area).filter(Boolean))].sort()], [gente]);
   const n = normalizarTexto(q);
   const lista = gente.filter((p) => (area === "Todas" || p.area === area) &&
     (!n || normalizarTexto(`${p.full_name} ${p.puesto} ${p.area} ${p.email}`).includes(n)));

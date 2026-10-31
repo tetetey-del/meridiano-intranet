@@ -1,39 +1,27 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { supabase, nombrePerfil } from "../lib/supabase";
+import { nombrePerfil, cambiarMiFoto } from "../lib/datos";
+import { reducirFoto } from "../lib/imagen";
 import { Icono } from "../components/Icono";
 import { Avatar } from "../components/Avatar";
 import { Mensaje } from "../components/Comunes";
-import { reducirFoto } from "../lib/imagen";
 
 export default function Mas() {
-  const { profile, esGestor, signOut, refresh } = useAuth();
+  const { profile, esGestor, signOut } = useAuth();
   const [msg, setMsg] = useState<{ t: "ok" | "error"; m: string } | null>(null);
   const [subiendo, setSubiendo] = useState(false);
   if (!profile) return null;
 
   async function subirFoto(file?: File) {
-    if (!file || !profile) return;
+    if (!file) return;
     if (!file.type.startsWith("image/")) return setMsg({ t: "error", m: "Elegí una imagen (JPG o PNG)." });
     setSubiendo(true); setMsg(null);
-    let foto: Blob;
-    try { foto = await reducirFoto(file); }
-    catch { setSubiendo(false); return setMsg({ t: "error", m: "No se pudo leer esa imagen. Probá con otra." }); }
-    const path = `${profile.id}/${Date.now()}.jpg`;
-    const up = await supabase.storage.from("avatares").upload(path, foto, { contentType: "image/jpeg" });
-    if (up.error) { setSubiendo(false); return setMsg({ t: "error", m: "No se pudo subir la foto." }); }
-    const url = supabase.storage.from("avatares").getPublicUrl(path).data.publicUrl;
-    const { error } = await supabase.rpc("cambiar_mi_foto", { url });
+    try { cambiarMiFoto(await reducirFoto(file)); setMsg({ t: "ok", m: "Foto actualizada. Ya se ve en el directorio." }); }
+    catch (e: any) { setMsg({ t: "error", m: e.message || "No se pudo leer esa imagen. Probá con otra." }); }
     setSubiendo(false);
-    if (error) return setMsg({ t: "error", m: "No se pudo guardar la foto." });
-    await refresh();
-    setMsg({ t: "ok", m: "Foto actualizada. Ya se ve en el directorio." });
   }
-  async function quitarFoto() {
-    const { error } = await supabase.rpc("cambiar_mi_foto", { url: null });
-    if (!error) { await refresh(); setMsg({ t: "ok", m: "Foto quitada: se muestran tus iniciales." }); }
-  }
+  function quitarFoto() { cambiarMiFoto(null); setMsg({ t: "ok", m: "Foto quitada: se muestran tus iniciales." }); }
 
   return (
     <div className="pagina">

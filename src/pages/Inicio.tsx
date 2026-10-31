@@ -1,45 +1,27 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase, Aviso, Evento, Doc } from "../lib/supabase";
+import { avisos, avisosPendientes, eventos, documentosRecientes } from "../lib/datos";
 import { useAuth } from "../lib/auth";
 import { hace, diaSemana, hora, fecha } from "../lib/formato";
-import { Cargando, Vacio } from "../components/Comunes";
+import { Vacio } from "../components/Comunes";
 import { Icono } from "../components/Icono";
 import { Avatar } from "../components/Avatar";
 
 export default function Inicio() {
   const { profile } = useAuth();
-  const [pend, setPend] = useState<Aviso[] | null>(null);
-  const [ultimos, setUltimos] = useState<Aviso[]>([]);
-  const [eventos, setEventos] = useState<Evento[]>([]);
-  const [docs, setDocs] = useState<(Doc & { folders: { name: string } })[]>([]);
-
-  useEffect(() => {
-    if (!profile) return;
-    (async () => {
-      const [a, r, e, d] = await Promise.all([
-        supabase.from("announcements").select("*").order("created_at", { ascending: false }).limit(20),
-        supabase.from("announcement_reads").select("announcement_id").eq("user_id", profile.id),
-        supabase.from("events").select("*").gte("starts_at", new Date().toISOString()).order("starts_at").limit(3),
-        supabase.from("documents").select("*, folders(name)").order("updated_at", { ascending: false }).limit(4),
-      ]);
-      const leidos = new Set((r.data ?? []).map((x) => x.announcement_id));
-      const todos = (a.data ?? []) as Aviso[];
-      setPend(todos.filter((x) => x.is_important && !leidos.has(x.id)));
-      setUltimos(todos.filter((x) => !(x.is_important && !leidos.has(x.id))).slice(0, 3));
-      setEventos((e.data ?? []) as Evento[]);
-      setDocs((d.data ?? []) as any);
-    })();
-  }, [profile]);
-
-  if (!pend) return <Cargando />;
-  const nombre = profile?.full_name.split(" ")[0];
+  if (!profile) return null;
+  const pend = avisosPendientes();
+  const idsPend = new Set(pend.map((a) => a.id));
+  const ultimos = avisos().filter((a) => !idsPend.has(a.id)).slice(0, 3);
+  const proximos = eventos().slice(0, 3);
+  const docs = documentosRecientes(4);
+  const nombre = profile.full_name.split(" ")[0];
+  const tz = "America/Costa_Rica";
 
   return (
     <div className="pagina">
       <header className="saludo">
         <div className="saludo-fila">
-          {profile && <Avatar nombre={profile.full_name} url={profile.avatar_url} size={56} />}
+          <Avatar nombre={profile.full_name} url={profile.avatar_url} size={56} />
           <h1>Hola, {nombre}</h1>
         </div>
         <p className="sub">{pend.length
@@ -84,12 +66,12 @@ export default function Inicio() {
 
         <section className="bloque" aria-labelledby="t-ev">
           <div className="bloque-cab"><h2 id="t-ev" className="h2">Próximos eventos</h2><Link to="/calendario" className="enlace">Calendario</Link></div>
-          {eventos.length ? (
+          {proximos.length ? (
             <ul className="lista panel">
-              {eventos.map((e) => (
+              {proximos.map((e) => (
                 <li key={e.id}><Link to="/calendario" className="fila">
-                  <span className="fecha-chip"><b>{new Date(e.starts_at).toLocaleDateString("es-CR", { day: "numeric", timeZone: "America/Costa_Rica" })}</b>
-                    <small>{new Date(e.starts_at).toLocaleDateString("es-CR", { month: "short", timeZone: "America/Costa_Rica" })}</small></span>
+                  <span className="fecha-chip"><b>{new Date(e.starts_at).toLocaleDateString("es-CR", { day: "numeric", timeZone: tz })}</b>
+                    <small>{new Date(e.starts_at).toLocaleDateString("es-CR", { month: "short", timeZone: tz })}</small></span>
                   <span className="fila-txt"><b>{e.title}</b><small>{diaSemana(e.starts_at)} · {hora(e.starts_at)}</small></span>
                 </Link></li>
               ))}
@@ -103,7 +85,7 @@ export default function Inicio() {
             {docs.map((d) => (
               <li key={d.id}><Link to={`/documentos/doc/${d.id}`} className="fila">
                 <Icono n="archivo" className="ico-doc" />
-                <span className="fila-txt"><b>{d.title}</b><small>{d.folders?.name} · actualizado el {fecha(d.updated_at)}</small></span>
+                <span className="fila-txt"><b>{d.title}</b><small>{d.carpeta} · actualizado el {fecha(d.updated_at)}</small></span>
               </Link></li>
             ))}
           </ul>

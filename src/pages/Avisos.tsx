@@ -1,41 +1,23 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { supabase, Aviso, CATEGORIAS } from "../lib/supabase";
-import { useAuth } from "../lib/auth";
+import { avisos as listarAvisos, avisosPendientes, recuento, CATEGORIAS } from "../lib/datos";
+import { useAuth, useCambios } from "../lib/auth";
 import { hace } from "../lib/formato";
-import { Cabecera, Cargando, Vacio } from "../components/Comunes";
+import { Cabecera, Vacio } from "../components/Comunes";
 import { Anillo } from "../components/Anillo";
 
-type Recuento = { announcement_id: string; leidos: number; total: number };
-
 export default function Avisos() {
-  const { profile, esGestor } = useAuth();
-  const [avisos, setAvisos] = useState<Aviso[] | null>(null);
-  const [leidos, setLeidos] = useState<Set<string>>(new Set());
-  const [rec, setRec] = useState<Record<string, Recuento>>({});
+  const { esGestor } = useAuth();
+  const cambios = useCambios();
   const [params, setParams] = useSearchParams();
   const cat = params.get("categoria") || "Todas";
-
-  useEffect(() => {
-    if (!profile) return;
-    (async () => {
-      const [a, r, c] = await Promise.all([
-        supabase.from("announcements").select("*").order("created_at", { ascending: false }),
-        supabase.from("announcement_reads").select("announcement_id").eq("user_id", profile.id),
-        supabase.rpc("recuento_lecturas"),
-      ]);
-      setAvisos((a.data ?? []) as Aviso[]);
-      setLeidos(new Set((r.data ?? []).map((x) => x.announcement_id)));
-      setRec(Object.fromEntries(((c.data ?? []) as Recuento[]).map((x) => [x.announcement_id, x])));
-    })();
-  }, [profile]);
+  const avisos = useMemo(() => listarAvisos(), [cambios]);
+  const pendientes = new Set(avisosPendientes().map((a) => a.id));
 
   const cats = useMemo(() => {
-    const usadas = new Set((avisos ?? []).map((a) => a.category));
+    const usadas = new Set(avisos.map((a) => a.category));
     return ["Todas", ...CATEGORIAS.filter((c) => usadas.has(c)), ...[...usadas].filter((c) => !CATEGORIAS.includes(c))];
   }, [avisos]);
-
-  if (!avisos) return <Cargando />;
   const lista = avisos.filter((a) => cat === "Todas" || a.category === cat);
 
   return (
@@ -52,8 +34,8 @@ export default function Avisos() {
       {lista.length === 0 ? <Vacio titulo="No hay avisos en esta categoría." /> : (
         <ul className="lista panel">
           {lista.map((a) => {
-            const pendiente = a.is_important && !leidos.has(a.id);
-            const r = rec[a.id];
+            const pendiente = pendientes.has(a.id);
+            const r = a.is_important && esGestor ? recuento(a.id) : null;
             return (
               <li key={a.id}>
                 <Link to={`/avisos/${a.id}`} className={"fila aviso-fila" + (pendiente ? " es-pendiente" : "")}>
@@ -67,7 +49,7 @@ export default function Avisos() {
                     <b>{a.title}</b>
                     <small>{hace(a.created_at)}</small>
                   </span>
-                  {a.is_important && r && esGestor && <Anillo valor={Number(r.leidos)} total={Number(r.total)} size={48} />}
+                  {r && <Anillo valor={r.leidos} total={r.total} size={48} />}
                 </Link>
               </li>
             );

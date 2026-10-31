@@ -1,12 +1,10 @@
 import { FormEvent, useState } from "react";
-import { supabase } from "../lib/supabase";
-import { useAuth } from "../lib/auth";
+import { iniciarSesion } from "../lib/datos";
 import { marca } from "../marca";
 import { Mensaje } from "../components/Comunes";
 import { CampoContrasena } from "../components/CampoContrasena";
 
 export default function Login() {
-  const { error: errCuenta } = useAuth();
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -15,10 +13,9 @@ export default function Login() {
   async function entrar(e: FormEvent) {
     e.preventDefault();
     setError(null); setCargando(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: pass });
+    const err = await iniciarSesion(email, pass);
     setCargando(false);
-    if (error) setError(error.message.includes("Invalid") ? "El correo o la contraseña no son correctos." :
-      error.message.includes("banned") ? "Tu cuenta está desactivada. Contactá con administración." : error.message);
+    if (err) setError(err);
   }
 
   return (
@@ -34,7 +31,7 @@ export default function Login() {
           <label>Contraseña
             <CampoContrasena autoComplete="current-password" required value={pass} onChange={(e) => setPass(e.target.value)} />
           </label>
-          {(error || errCuenta) && <Mensaje tipo="error">{error || errCuenta}</Mensaje>}
+          {error && <Mensaje tipo="error">{error}</Mensaje>}
           <button className="btn primario grande" disabled={cargando}>{cargando ? "Entrando…" : "Entrar"}</button>
         </form>
         <p className="nota">¿Olvidaste la contraseña? Pedí una nueva a administración.</p>

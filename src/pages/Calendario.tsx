@@ -1,59 +1,24 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase, Evento } from "../lib/supabase";
-import { useAuth } from "../lib/auth";
+import { eventos as listarEventos, miAsistencia, responderAsistencia, recuentoAsistencia, respuestasAsistencia, Evento } from "../lib/datos";
+import { useAuth, useCambios } from "../lib/auth";
 import { diaSemana, hora, mesAnio } from "../lib/formato";
-import { Cabecera, Cargando, Vacio } from "../components/Comunes";
+import { Cabecera, Vacio } from "../components/Comunes";
 import { Icono } from "../components/Icono";
 
-type Rec = { event_id: string; si: number; no: number };
+const tz = "America/Costa_Rica";
 
 export default function Calendario() {
-  const { profile, esGestor } = useAuth();
-  const [eventos, setEventos] = useState<Evento[] | null>(null);
-  const [mio, setMio] = useState<Record<string, string>>({});
-  const [rec, setRec] = useState<Record<string, Rec>>({});
-  const [nombres, setNombres] = useState<Record<string, { si: string[]; no: string[] }>>({});
+  const { esGestor } = useAuth();
+  useCambios();
   const [pasados, setPasados] = useState(false);
+  const eventos = listarEventos(pasados);
 
-  const cargar = useCallback(async () => {
-    if (!profile) return;
-    const ahora = new Date().toISOString();
-    const q = supabase.from("events").select("*");
-    const [e, m, r] = await Promise.all([
-      (pasados ? q.lt("starts_at", ahora).order("starts_at", { ascending: false }) : q.gte("starts_at", ahora).order("starts_at")),
-      supabase.from("event_rsvps").select("event_id, status").eq("user_id", profile.id),
-      supabase.rpc("recuento_asistencia"),
-    ]);
-    setEventos((e.data ?? []) as Evento[]);
-    setMio(Object.fromEntries((m.data ?? []).map((x) => [x.event_id, x.status])));
-    setRec(Object.fromEntries(((r.data ?? []) as Rec[]).map((x) => [x.event_id, x])));
-    if (esGestor) {
-      const { data } = await supabase.from("event_rsvps").select("event_id, status, profiles(full_name)");
-      const agr: Record<string, { si: string[]; no: string[] }> = {};
-      (data ?? []).forEach((x: any) => {
-        agr[x.event_id] ??= { si: [], no: [] };
-        agr[x.event_id][x.status as "si" | "no"].push(x.profiles?.full_name);
-      });
-      setNombres(agr);
-    }
-  }, [profile, esGestor, pasados]);
-  useEffect(() => { cargar(); }, [cargar]);
-
-  async function responder(ev: string, status: "si" | "no") {
-    if (!profile) return;
-    if (mio[ev] === status) {
-      // Tocar de nuevo la opción elegida quita la respuesta
-      setMio((m) => { const c = { ...m }; delete c[ev]; return c; });
-      await supabase.from("event_rsvps").delete().eq("event_id", ev).eq("user_id", profile.id);
-    } else {
-      setMio((m) => ({ ...m, [ev]: status }));
-      await supabase.from("event_rsvps").upsert({ event_id: ev, user_id: profile.id, status, updated_at: new Date().toISOString() });
-    }
-    cargar();
+  // Tocar de nuevo la opción elegida quita la respuesta
+  function responder(ev: string, status: "si" | "no") {
+    responderAsistencia(ev, miAsistencia(ev) === status ? null : status);
   }
 
-  if (!eventos) return <Cargando />;
   const porMes: Record<string, Evento[]> = {};
   eventos.forEach((e) => { (porMes[mesAnio(e.starts_at)] ??= []).push(e); });
 
@@ -72,12 +37,13 @@ export default function Calendario() {
           <h2 className="h2 mes">{mes}</h2>
           <ul className="eventos">
             {evs.map((e) => {
-              const r = rec[e.id]; const yo = mio[e.id];
+              const r = recuentoAsistencia(e.id); const yo = miAsistencia(e.id);
+              const quien = esGestor ? respuestasAsistencia(e.id) : null;
               return (
                 <li key={e.id} className="evento panel">
                   <div className="evento-fecha" aria-hidden="true">
-                    <b>{new Date(e.starts_at).toLocaleDateString("es-CR", { day: "numeric", timeZone: "America/Costa_Rica" })}</b>
-                    <small>{new Date(e.starts_at).toLocaleDateString("es-CR", { weekday: "short", timeZone: "America/Costa_Rica" })}</small>
+                    <b>{new Date(e.starts_at).toLocaleDateString("es-CR", { day: "numeric", timeZone: tz })}</b>
+                    <small>{new Date(e.starts_at).toLocaleDateString("es-CR", { weekday: "short", timeZone: tz })}</small>
                   </div>
                   <div className="evento-txt">
                     <h3 className="h3">{e.title}</h3>
@@ -93,12 +59,12 @@ export default function Calendario() {
                       </div>
                     )}
                     {!pasados && yo && <p className="rsvp-ayuda">Tocá de nuevo tu respuesta para quitarla.</p>}
-                    <p className="rsvp-cuenta">{r ? `${r.si} asistirán · ${r.no} no asistirán` : ""}</p>
-                    {esGestor && nombres[e.id] && (
+                    <p className="rsvp-cuenta">{r.si} asistirán · {r.no} no asistirán</p>
+                    {quien && (quien.si.length > 0 || quien.no.length > 0) && (
                       <details className="quien">
                         <summary>Ver respuestas</summary>
-                        {nombres[e.id].si.length > 0 && <p><b>Asistirán:</b> {nombres[e.id].si.join(", ")}</p>}
-                        {nombres[e.id].no.length > 0 && <p><b>No asistirán:</b> {nombres[e.id].no.join(", ")}</p>}
+                        {quien.si.length > 0 && <p><b>Asistirán:</b> {quien.si.join(", ")}</p>}
+                        {quien.no.length > 0 && <p><b>No asistirán:</b> {quien.no.join(", ")}</p>}
                       </details>
                     )}
                   </div>
