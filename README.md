@@ -37,7 +37,7 @@ El resto del equipo de ejemplo (14 personas) usa la misma contraseña.
 
 ## Cómo reiniciar los datos de ejemplo
 
-Los datos **no** se guardan en el navegador (localStorage) sino en la base de datos, compartidos entre todas las cuentas. Por eso borrar el localStorage solo cierra la sesión y no reinicia nada. Para reiniciar:
+Los datos **no** se guardan en el navegador sino en la base de datos, compartidos entre todas las cuentas. En el navegador solo queda la sesión, y en **sessionStorage**: caduca sola al cerrar la pestaña (hay que volver a entrar). Por eso borrar el localStorage o el sessionStorage solo cierra la sesión y no reinicia nada. Para reiniciar:
 
 Entrá con la cuenta de **Administración** (`laura.mendez@academiameridiano.cr`) y andá a **Gestión → Reiniciar datos de ejemplo**. La demo vuelve a como estaba al principio:
 

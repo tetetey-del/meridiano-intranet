@@ -1,8 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import { supabaseConfig } from "../marca";
 
+// La sesión se guarda en sessionStorage: dura mientras la pestaña está abierta y caduca sola al cerrarla.
 export const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
-  auth: { persistSession: true, autoRefreshToken: true },
+  auth: { persistSession: true, autoRefreshToken: true, storage: window.sessionStorage },
 });
 
 export type Perfil = "equipo" | "responsable" | "admin";
