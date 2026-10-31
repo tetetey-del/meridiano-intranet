@@ -23,6 +23,8 @@ const P: Record<string, string> = {
   telefono: "M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2",
   exportar: "M12 3v12m0-12L7.5 7.5M12 3l4.5 4.5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6",
   cerrar: "M6 6l12 12M18 6 6 18",
+  ojo: "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12m10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6",
+  "ojo-no": "M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2",
   candado: "M6 11h12v10H6zm2 0V7a4 4 0 0 1 8 0v4",
 };
 export function Icono({ n, size = 20, className }: { n: keyof typeof P | string; size?: number; className?: string }) {

@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { marca } from "../marca";
 import { Mensaje } from "../components/Comunes";
+import { CampoContrasena } from "../components/CampoContrasena";
 
 export default function Login() {
   const { error: errCuenta } = useAuth();
@@ -31,7 +32,7 @@ export default function Login() {
             <input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </label>
           <label>Contraseña
-            <input type="password" autoComplete="current-password" required value={pass} onChange={(e) => setPass(e.target.value)} />
+            <CampoContrasena autoComplete="current-password" required value={pass} onChange={(e) => setPass(e.target.value)} />
           </label>
           {(error || errCuenta) && <Mensaje tipo="error">{error || errCuenta}</Mensaje>}
           <button className="btn primario grande" disabled={cargando}>{cargando ? "Entrando…" : "Entrar"}</button>

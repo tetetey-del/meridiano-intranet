@@ -29,3 +29,16 @@
 .mes::first-letter { text-transform: uppercase; }
 .meta { align-items: flex-start; }
 .meta svg { flex: none; margin-top: 3px; }
+
+/* ===== Textos largos (correos) en listas: pasan de línea en vez de taparse ===== */
+.fila-txt b, .fila-txt small { overflow-wrap: anywhere; }
+
+/* ===== Contraseña con botón mostrar/ocultar ===== */
+.campo-pass { position: relative; display: block; flex: 1; min-width: 180px; }
+.campo-pass input { padding-right: 52px !important; }
+.ver-pass {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 42px; height: 40px; display: grid; place-items: center;
+  border: 0; background: none; color: var(--tinta-2); cursor: pointer; border-radius: 6px;
+}
+.ver-pass:hover, .ver-pass[aria-pressed="true"] { color: var(--principal); }

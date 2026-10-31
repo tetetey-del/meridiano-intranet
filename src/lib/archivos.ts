@@ -9,7 +9,20 @@ export async function descargar(bucket: string, path: string, nombre: string, ab
     .from(bucket)
     .createSignedUrl(path, 60, abrir ? undefined : { download: nombre });
   if (error || !data) throw new Error("No tenés permiso para abrir este archivo o ya no existe.");
-  window.location.assign(data.signedUrl);
+  if (abrir) { window.location.assign(data.signedUrl); return; }
+  // Descarga real: se trae el archivo y se guarda con su nombre.
+  // En iPhone, Safari pregunta "¿Descargar?" y lo guarda en Archivos › Descargas en vez de abrirlo.
+  try {
+    const res = await fetch(data.signedUrl);
+    if (!res.ok) throw new Error();
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement("a");
+    a.href = url; a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  } catch {
+    window.location.assign(data.signedUrl);
+  }
 }
 
 /** Extrae el texto de PDF, Word (.docx) o texto plano para que la búsqueda encuentre por contenido. */
