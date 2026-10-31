@@ -42,3 +42,7 @@
   border: 0; background: none; color: var(--tinta-2); cursor: pointer; border-radius: 6px;
 }
 .ver-pass:hover, .ver-pass[aria-pressed="true"] { color: var(--principal); }
+
+/* ===== Usuarios: perfil al lado del nombre, correo en un solo renglón ===== */
+.nombre-perfil { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.fila-txt small.un-renglon { overflow-wrap: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

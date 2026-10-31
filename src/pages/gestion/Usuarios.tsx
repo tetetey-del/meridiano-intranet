@@ -81,8 +81,10 @@ export default function Usuarios() {
           <li key={p.id} className={p.active ? "" : "inactivo"}>
             <button className="fila fila-btn" aria-expanded={abierto === p.id} onClick={() => setAbierto(abierto === p.id ? null : p.id)}>
               <Avatar nombre={p.full_name} url={p.avatar_url} size={38} />
-              <span className="fila-txt"><b>{p.full_name}</b><small>{p.email}</small></span>
-              <span className="chip">{p.active ? nombrePerfil[p.role] : "Desactivada"}</span>
+              <span className="fila-txt">
+                <span className="nombre-perfil"><b>{p.full_name}</b><span className="chip">{p.active ? nombrePerfil[p.role] : "Desactivada"}</span></span>
+                <small className="un-renglon" title={p.email}>{p.email}</small>
+              </span>
             </button>
             {abierto === p.id && <Editor p={p} esYo={p.id === yo?.id}
               onListo={(m) => { setMsg(m); cargar(); if (p.id === yo?.id) refresh(); }} />}
