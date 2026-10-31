@@ -5,6 +5,7 @@ import { useAuth } from "../lib/auth";
 import { hace, diaSemana, hora, fecha } from "../lib/formato";
 import { Cargando, Vacio } from "../components/Comunes";
 import { Icono } from "../components/Icono";
+import { Avatar } from "../components/Avatar";
 
 export default function Inicio() {
   const { profile } = useAuth();
@@ -37,7 +38,10 @@ export default function Inicio() {
   return (
     <div className="pagina">
       <header className="saludo">
-        <h1>Hola, {nombre}</h1>
+        <div className="saludo-fila">
+          {profile && <Avatar nombre={profile.full_name} url={profile.avatar_url} size={56} />}
+          <h1>Hola, {nombre}</h1>
+        </div>
         <p className="sub">{pend.length
           ? `Tenés ${pend.length} aviso${pend.length > 1 ? "s" : ""} importante${pend.length > 1 ? "s" : ""} por confirmar.`
           : "Estás al día con los avisos importantes."}</p>

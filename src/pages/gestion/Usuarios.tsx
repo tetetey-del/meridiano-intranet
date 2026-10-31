@@ -111,7 +111,7 @@ function Editor({ p, esYo, onListo }: { p: Profile; esYo: boolean; onListo: (m: 
     let img: Blob;
     try { img = await reducirFoto(file); } catch { return onListo({ t: "error", m: "No se pudo leer esa imagen. Probá con otra." }); }
     const path = `${p.id}/${Date.now()}.jpg`;
-    const up = await supabase.storage.from("avatares").upload(path, img, { upsert: true, contentType: "image/jpeg" });
+    const up = await supabase.storage.from("avatares").upload(path, img, { contentType: "image/jpeg" });
     if (up.error) return onListo({ t: "error", m: "No se pudo subir la foto." });
     const url = supabase.storage.from("avatares").getPublicUrl(path).data.publicUrl;
     await supabase.from("profiles").update({ avatar_url: url }).eq("id", p.id);

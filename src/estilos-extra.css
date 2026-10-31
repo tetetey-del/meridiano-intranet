@@ -46,3 +46,6 @@
 /* ===== Usuarios: perfil al lado del nombre, correo en un solo renglón ===== */
 .nombre-perfil { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
 .fila-txt small.un-renglon { overflow-wrap: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ===== Inicio: foto junto al saludo ===== */
+.saludo-fila { display: flex; align-items: center; gap: 14px; }
