@@ -5,6 +5,7 @@ import { supabase, nombrePerfil } from "../lib/supabase";
 import { Icono } from "../components/Icono";
 import { Avatar } from "../components/Avatar";
 import { Mensaje } from "../components/Comunes";
+import { reducirFoto } from "../lib/imagen";
 
 export default function Mas() {
   const { profile, esGestor, signOut, refresh } = useAuth();
@@ -15,11 +16,12 @@ export default function Mas() {
   async function subirFoto(file?: File) {
     if (!file || !profile) return;
     if (!file.type.startsWith("image/")) return setMsg({ t: "error", m: "Elegí una imagen (JPG o PNG)." });
-    if (file.size > 5 * 1024 * 1024) return setMsg({ t: "error", m: "La foto supera los 5 MB." });
     setSubiendo(true); setMsg(null);
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${profile.id}/${Date.now()}.${ext}`;
-    const up = await supabase.storage.from("avatares").upload(path, file, { contentType: file.type });
+    let foto: Blob;
+    try { foto = await reducirFoto(file); }
+    catch { setSubiendo(false); return setMsg({ t: "error", m: "No se pudo leer esa imagen. Probá con otra." }); }
+    const path = `${profile.id}/${Date.now()}.jpg`;
+    const up = await supabase.storage.from("avatares").upload(path, foto, { contentType: "image/jpeg" });
     if (up.error) { setSubiendo(false); return setMsg({ t: "error", m: "No se pudo subir la foto." }); }
     const url = supabase.storage.from("avatares").getPublicUrl(path).data.publicUrl;
     const { error } = await supabase.rpc("cambiar_mi_foto", { url });
