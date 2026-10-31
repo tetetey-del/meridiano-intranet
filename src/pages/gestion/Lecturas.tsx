@@ -1,34 +1,20 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase, Aviso, Profile, nombrePerfil } from "../../lib/supabase";
+import { avisos as listarAvisos, personas, lecturas as todasLecturas, nombrePerfil, Aviso } from "../../lib/datos";
+import { useCambios } from "../../lib/auth";
 import { fecha, fechaHora } from "../../lib/formato";
-import { Cabecera, Cargando, Vacio } from "../../components/Comunes";
+import { Cabecera, Vacio } from "../../components/Comunes";
 import { Anillo } from "../../components/Anillo";
 import { Icono } from "../../components/Icono";
 
-type Lectura = { announcement_id: string; user_id: string; read_at: string };
-
 export default function Lecturas() {
-  const [avisos, setAvisos] = useState<Aviso[] | null>(null);
-  const [gente, setGente] = useState<Profile[]>([]);
-  const [lect, setLect] = useState<Lectura[]>([]);
+  useCambios();
   const [soloImp, setSoloImp] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const [a, p, l] = await Promise.all([
-        supabase.from("announcements").select("*").order("created_at", { ascending: false }),
-        supabase.from("profiles").select("*").eq("active", true).order("full_name"),
-        supabase.from("announcement_reads").select("*"),
-      ]);
-      setAvisos((a.data ?? []) as Aviso[]); setGente((p.data ?? []) as Profile[]); setLect((l.data ?? []) as Lectura[]);
-    })();
-  }, []);
-
-  if (!avisos) return <Cargando />;
-  const lista = avisos.filter((a) => !soloImp || a.is_important);
+  const gente = personas();
+  const lect = todasLecturas();
+  const lista = listarAvisos().filter((a) => !soloImp || a.is_important);
   const activos = new Set(gente.map((g) => g.id));
-  const leidos = (id: string) => lect.filter((l) => l.announcement_id === id && activos.has(l.user_id));
+  const leidos = (id: string) => lect.filter((l) => l.announcement_id === id && activos.has(l.user_id)).length;
 
   function exportar(sel: Aviso[]) {
     const c = (v: string) => `"${String(v ?? "").replace(/"/g, '""')}"`;
@@ -59,7 +45,7 @@ export default function Lecturas() {
       {lista.length === 0 ? <Vacio titulo="No hay avisos para mostrar." /> : (
         <ul className="lista panel">
           {lista.map((a) => {
-            const n = leidos(a.id).length;
+            const n = leidos(a.id);
             return (
               <li key={a.id} className="fila">
                 <Anillo valor={n} total={gente.length} size={50} />

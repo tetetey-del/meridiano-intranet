@@ -1,13 +1,10 @@
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase, CATEGORIAS } from "../../lib/supabase";
-import { useAuth } from "../../lib/auth";
-import { slug } from "../../lib/formato";
+import { publicarAviso, CATEGORIAS } from "../../lib/datos";
 import { Cabecera, Mensaje } from "../../components/Comunes";
 import { SelectorArchivo } from "../../components/SelectorArchivo";
 
 export default function NuevoAviso() {
-  const { profile } = useAuth();
   const nav = useNavigate();
   const [titulo, setTitulo] = useState(""); const [cuerpo, setCuerpo] = useState("");
   const [cat, setCat] = useState("General"); const [imp, setImp] = useState(false);
@@ -16,17 +13,9 @@ export default function NuevoAviso() {
 
   async function publicar(e: FormEvent) {
     e.preventDefault();
-    if (!profile) return;
     setEnviando(true); setError(null);
-    const { data: a, error } = await supabase.from("announcements")
-      .insert({ title: titulo.trim(), body: cuerpo.trim(), category: cat, is_important: imp, author_id: profile.id }).select().single();
-    if (error || !a) { setError("No se pudo publicar el aviso."); setEnviando(false); return; }
-    for (const f of files) {
-      const path = `${a.id}/${Date.now()}-${slug(f.name)}`;
-      const up = await supabase.storage.from("adjuntos").upload(path, f, { contentType: f.type || "application/octet-stream" });
-      if (!up.error) await supabase.from("announcement_attachments").insert({ announcement_id: a.id, file_path: path, file_name: f.name, size_bytes: f.size });
-    }
-    nav(`/avisos/${a.id}`);
+    try { nav(`/avisos/${await publicarAviso({ title: titulo, body: cuerpo, category: cat, is_important: imp }, files)}`); }
+    catch (e: any) { setError(e.message); setEnviando(false); }
   }
 
   return (
@@ -38,7 +27,7 @@ export default function NuevoAviso() {
           <select value={cat} onChange={(e) => setCat(e.target.value)}>{CATEGORIAS.map((c) => <option key={c}>{c}</option>)}</select>
         </label>
         <label>Texto del aviso<textarea required rows={8} value={cuerpo} onChange={(e) => setCuerpo(e.target.value)} placeholder="Dejá una línea en blanco para separar párrafos." /></label>
-        <SelectorArchivo etiqueta="Adjuntos (opcional)" multiple archivos={files} onCambio={setFiles} />
+        <SelectorArchivo etiqueta="Adjuntos (opcional, hasta 1,5 MB cada uno)" multiple archivos={files} onCambio={setFiles} />
         <label className="check-grande">
           <input type="checkbox" checked={imp} onChange={(e) => setImp(e.target.checked)} />
           <span><b>Importante: pedir confirmación de lectura</b><small>Cada persona verá un botón para confirmar y podrás ver el recuento de quién lo leyó.</small></span>

@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
-import { supabase } from "../../lib/supabase";
+import { reiniciarDatos } from "../../lib/datos";
 import { marca } from "../../marca";
 import { Cabecera, Mensaje } from "../../components/Comunes";
 import { Icono } from "../../components/Icono";
 
 export default function Gestion() {
-  const { esAdmin, refresh } = useAuth();
-  const [reiniciando, setReiniciando] = useState(false);
+  const { esAdmin } = useAuth();
   const [msg, setMsg] = useState<{ t: "ok" | "error"; m: string } | null>(null);
 
   const op = [
@@ -23,13 +22,9 @@ export default function Gestion() {
   ];
 
   // Solo en la demo: vuelve a dejar personas, carpetas, documentos, avisos y eventos de ejemplo como al principio
-  async function reiniciar() {
+  function reiniciar() {
     if (!confirm("¿Reiniciar los datos de ejemplo? Se borra todo lo creado en las pruebas (avisos, documentos, versiones, eventos, cuentas y fotos) y vuelven los datos originales.")) return;
-    setReiniciando(true); setMsg(null);
-    const { error } = await supabase.rpc("reiniciar_datos_ejemplo");
-    setReiniciando(false);
-    if (error) return setMsg({ t: "error", m: "No se pudieron reiniciar los datos." });
-    await refresh();
+    reiniciarDatos();
     setMsg({ t: "ok", m: "Datos de ejemplo reiniciados. Todo quedó como al principio." });
   }
 
@@ -49,11 +44,9 @@ export default function Gestion() {
       {esAdmin && marca.mostrarCuentasDemo && (
         <section className="panel demo-reinicio">
           <h2 className="h3">Datos de ejemplo</h2>
-          <p className="ayuda">Esta es una demo. Después de probar, podés dejar todo como al principio: el equipo de 14 personas, las 5 carpetas, los documentos con sus versiones, los avisos con sus lecturas y los eventos.</p>
+          <p className="ayuda">Esta es una demo. Después de probar, podés dejar todo como al principio: el equipo de 14 personas, las 5 carpetas, los documentos con sus versiones, los avisos con sus lecturas y los eventos. Es lo mismo que borrar el localStorage del navegador.</p>
           {msg && <Mensaje tipo={msg.t}>{msg.m}</Mensaje>}
-          <button className="btn secundario" onClick={reiniciar} disabled={reiniciando}>
-            {reiniciando ? "Reiniciando…" : "Reiniciar datos de ejemplo"}
-          </button>
+          <button className="btn secundario" onClick={reiniciar}>Reiniciar datos de ejemplo</button>
         </section>
       )}
     </div>

@@ -1,12 +1,10 @@
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
-import { useAuth } from "../../lib/auth";
+import { crearEvento } from "../../lib/datos";
 import { localCRaISO } from "../../lib/formato";
 import { Cabecera, Mensaje } from "../../components/Comunes";
 
 export default function NuevoEvento() {
-  const { profile } = useAuth();
   const nav = useNavigate();
   const [f, setF] = useState({ title: "", description: "", location: "", inicio: "", fin: "" });
   const [error, setError] = useState<string | null>(null); const [enviando, setEnviando] = useState(false);
@@ -16,12 +14,11 @@ export default function NuevoEvento() {
     e.preventDefault();
     if (f.fin && f.fin <= f.inicio) { setError("La hora de fin tiene que ser posterior al inicio."); return; }
     setEnviando(true);
-    const { error } = await supabase.from("events").insert({
-      title: f.title.trim(), description: f.description.trim(), location: f.location.trim(),
-      starts_at: localCRaISO(f.inicio), ends_at: f.fin ? localCRaISO(f.fin) : null, created_by: profile?.id,
-    });
-    setEnviando(false);
-    if (error) setError("No se pudo crear el evento."); else nav("/calendario");
+    try {
+      crearEvento({ title: f.title, description: f.description.trim(), location: f.location.trim(),
+        starts_at: localCRaISO(f.inicio), ends_at: f.fin ? localCRaISO(f.fin) : null });
+      nav("/calendario");
+    } catch (e: any) { setError(e.message); setEnviando(false); }
   }
 
   return (

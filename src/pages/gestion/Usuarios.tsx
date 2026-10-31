@@ -1,44 +1,38 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { supabase, Profile, Perfil, nombrePerfil } from "../../lib/supabase";
-import { useAuth } from "../../lib/auth";
-import { adminUsuarios } from "../../lib/adminApi";
+import { FormEvent, useMemo, useState } from "react";
+import { personas, crearUsuario, actualizarUsuario, cambiarActivo, cambiarContrasena, nombrePerfil, Profile, Perfil } from "../../lib/datos";
+import { useAuth, useCambios } from "../../lib/auth";
 import { normalizarTexto } from "../../lib/texto";
-import { Cabecera, Cargando, Mensaje } from "../../components/Comunes";
+import { reducirFoto } from "../../lib/imagen";
+import { Cabecera, Mensaje } from "../../components/Comunes";
 import { Avatar } from "../../components/Avatar";
 import { Icono } from "../../components/Icono";
 import { CampoContrasena } from "../../components/CampoContrasena";
-import { reducirFoto } from "../../lib/imagen";
 
 const PERFILES: Perfil[] = ["equipo", "responsable", "admin"];
 const vacio = { full_name: "", email: "", password: "", role: "equipo" as Perfil, puesto: "", area: "", phone: "" };
+type Msg = { t: "ok" | "error"; m: string };
 
 export default function Usuarios() {
-  const { profile: yo, refresh } = useAuth();
-  const [lista, setLista] = useState<Profile[] | null>(null);
+  const { profile: yo } = useAuth();
+  const cambios = useCambios();
+  const lista = useMemo(() => personas({ incluirInactivas: true }), [cambios]);
   const [q, setQ] = useState("");
   const [abierto, setAbierto] = useState<string | null>(null);
   const [nuevo, setNuevo] = useState(false);
   const [f, setF] = useState(vacio);
-  const [msg, setMsg] = useState<{ t: "ok" | "error"; m: string } | null>(null);
+  const [msg, setMsg] = useState<Msg | null>(null);
   const [ocupado, setOcupado] = useState(false);
-
-  const cargar = useCallback(async () => {
-    const { data } = await supabase.from("profiles").select("*").order("active", { ascending: false }).order("full_name");
-    setLista((data ?? []) as Profile[]);
-  }, []);
-  useEffect(() => { cargar(); }, [cargar]);
 
   async function crear(e: FormEvent) {
     e.preventDefault(); setOcupado(true); setMsg(null);
     try {
-      await adminUsuarios({ action: "crear", ...f });
+      await crearUsuario(f);
       setMsg({ t: "ok", m: `Cuenta creada para ${f.full_name}. Pasale su correo y contraseña.` });
-      setF(vacio); setNuevo(false); cargar();
+      setF(vacio); setNuevo(false);
     } catch (e: any) { setMsg({ t: "error", m: e.message }); }
     setOcupado(false);
   }
 
-  if (!lista) return <Cargando />;
   const n = normalizarTexto(q);
   const vis = lista.filter((p) => !n || normalizarTexto(`${p.full_name} ${p.email} ${p.puesto}`).includes(n));
   const activos = lista.filter((p) => p.active).length;
@@ -86,8 +80,7 @@ export default function Usuarios() {
                 <small className="un-renglon" title={p.email}>{p.email}</small>
               </span>
             </button>
-            {abierto === p.id && <Editor p={p} esYo={p.id === yo?.id}
-              onListo={(m) => { setMsg(m); cargar(); if (p.id === yo?.id) refresh(); }} />}
+            {abierto === p.id && <Editor key={p.id} p={p} esYo={p.id === yo?.id} onListo={setMsg} />}
           </li>
         ))}
       </ul>
@@ -95,41 +88,23 @@ export default function Usuarios() {
   );
 }
 
-function Editor({ p, esYo, onListo }: { p: Profile; esYo: boolean; onListo: (m: { t: "ok" | "error"; m: string }) => void }) {
+function Editor({ p, esYo, onListo }: { p: Profile; esYo: boolean; onListo: (m: Msg) => void }) {
   const [d, setD] = useState({ full_name: p.full_name, puesto: p.puesto, area: p.area, phone: p.phone, role: p.role });
   const [pass, setPass] = useState("");
-  const [ocupado, setOcupado] = useState(false);
 
-  async function guardar(e: FormEvent) {
-    e.preventDefault(); setOcupado(true);
-    const { error } = await supabase.from("profiles").update(d).eq("id", p.id);
-    setOcupado(false);
-    onListo(error ? { t: "error", m: "No se pudieron guardar los cambios." } : { t: "ok", m: `Datos de ${d.full_name} guardados.` });
-  }
+  const intentar = async (fn: () => unknown, ok: string) => {
+    try { await fn(); onListo({ t: "ok", m: ok }); } catch (e: any) { onListo({ t: "error", m: e.message }); }
+  };
+  function guardar(e: FormEvent) { e.preventDefault(); intentar(() => actualizarUsuario(p.id, d), `Datos de ${d.full_name} guardados.`); }
   async function foto(file?: File) {
     if (!file) return;
-    let img: Blob;
-    try { img = await reducirFoto(file); } catch { return onListo({ t: "error", m: "No se pudo leer esa imagen. Probá con otra." }); }
-    const path = `${p.id}/${Date.now()}.jpg`;
-    const up = await supabase.storage.from("avatares").upload(path, img, { contentType: "image/jpeg" });
-    if (up.error) return onListo({ t: "error", m: "No se pudo subir la foto." });
-    const url = supabase.storage.from("avatares").getPublicUrl(path).data.publicUrl;
-    await supabase.from("profiles").update({ avatar_url: url }).eq("id", p.id);
-    onListo({ t: "ok", m: "Foto actualizada." });
+    intentar(async () => actualizarUsuario(p.id, { avatar_url: await reducirFoto(file) }), "Foto actualizada.");
   }
-  async function quitarFoto() {
-    await supabase.from("profiles").update({ avatar_url: null }).eq("id", p.id);
-    onListo({ t: "ok", m: "Foto quitada: se muestran las iniciales." });
-  }
-  async function activar(active: boolean) {
+  function activar(active: boolean) {
     if (!active && !confirm(`¿Desactivar la cuenta de ${p.full_name}? No podrá entrar hasta que la reactives.`)) return;
-    try { await adminUsuarios({ action: "activar", id: p.id, active }); onListo({ t: "ok", m: active ? "Cuenta reactivada." : "Cuenta desactivada." }); }
-    catch (e: any) { onListo({ t: "error", m: e.message }); }
+    intentar(() => cambiarActivo(p.id, active), active ? "Cuenta reactivada." : "Cuenta desactivada.");
   }
-  async function cambiarPass() {
-    try { await adminUsuarios({ action: "contrasena", id: p.id, password: pass }); setPass(""); onListo({ t: "ok", m: `Contraseña de ${p.full_name} cambiada.` }); }
-    catch (e: any) { onListo({ t: "error", m: e.message }); }
-  }
+  function cambiarPass() { intentar(async () => { await cambiarContrasena(p.id, pass); setPass(""); }, `Contraseña de ${p.full_name} cambiada.`); }
 
   return (
     <div className="editor">
@@ -148,11 +123,11 @@ function Editor({ p, esYo, onListo }: { p: Profile; esYo: boolean; onListo: (m: 
           </label>
         </div>
         {esYo && <small className="ayuda">No podés cambiar tu propio perfil para no quedarte sin acceso a la gestión.</small>}
-        <div className="acciones"><button className="btn primario" disabled={ocupado}>Guardar cambios</button></div>
+        <div className="acciones"><button className="btn primario">Guardar cambios</button></div>
       </form>
       <div className="editor-extra">
         <label className="btn secundario">Subir foto<input type="file" accept="image/*" hidden onChange={(e) => foto(e.target.files?.[0])} /></label>
-        {p.avatar_url && <button className="btn texto" onClick={quitarFoto}>Quitar foto</button>}
+        {p.avatar_url && <button className="btn texto" onClick={() => intentar(() => actualizarUsuario(p.id, { avatar_url: null }), "Foto quitada: se muestran las iniciales.")}>Quitar foto</button>}
       </div>
       <div className="editor-extra">
         <CampoContrasena aria-label="Nueva contraseña" autoComplete="new-password" placeholder="Nueva contraseña (mín. 8)" value={pass} onChange={(e) => setPass(e.target.value)} />
