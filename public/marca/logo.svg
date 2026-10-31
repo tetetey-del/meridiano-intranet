@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Academia Meridiano">
+  <!-- Logotipo original de ejemplo (libre de derechos). Reemplazar por el logo del cliente. -->
+  <rect width="64" height="64" rx="14" fill="#0E4A52"/>
+  <circle cx="32" cy="33" r="19" fill="none" stroke="#F2F5F4" stroke-width="3"/>
+  <ellipse cx="32" cy="33" rx="8" ry="19" fill="none" stroke="#F2F5F4" stroke-width="2.4"/>
+  <line x1="13" y1="33" x2="51" y2="33" stroke="#F2F5F4" stroke-width="2" opacity=".55"/>
+  <path d="M32 6 L36 14 L32 12 L28 14 Z" fill="#D9A441"/>
+</svg>
