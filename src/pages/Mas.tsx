@@ -1,18 +1,54 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { nombrePerfil } from "../lib/supabase";
+import { supabase, nombrePerfil } from "../lib/supabase";
 import { Icono } from "../components/Icono";
 import { Avatar } from "../components/Avatar";
+import { Mensaje } from "../components/Comunes";
 
 export default function Mas() {
-  const { profile, esGestor, signOut } = useAuth();
+  const { profile, esGestor, signOut, refresh } = useAuth();
+  const [msg, setMsg] = useState<{ t: "ok" | "error"; m: string } | null>(null);
+  const [subiendo, setSubiendo] = useState(false);
   if (!profile) return null;
+
+  async function subirFoto(file?: File) {
+    if (!file || !profile) return;
+    if (!file.type.startsWith("image/")) return setMsg({ t: "error", m: "Elegí una imagen (JPG o PNG)." });
+    if (file.size > 5 * 1024 * 1024) return setMsg({ t: "error", m: "La foto supera los 5 MB." });
+    setSubiendo(true); setMsg(null);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${profile.id}/${Date.now()}.${ext}`;
+    const up = await supabase.storage.from("avatares").upload(path, file, { contentType: file.type });
+    if (up.error) { setSubiendo(false); return setMsg({ t: "error", m: "No se pudo subir la foto." }); }
+    const url = supabase.storage.from("avatares").getPublicUrl(path).data.publicUrl;
+    const { error } = await supabase.rpc("cambiar_mi_foto", { url });
+    setSubiendo(false);
+    if (error) return setMsg({ t: "error", m: "No se pudo guardar la foto." });
+    await refresh();
+    setMsg({ t: "ok", m: "Foto actualizada. Ya se ve en el directorio." });
+  }
+  async function quitarFoto() {
+    const { error } = await supabase.rpc("cambiar_mi_foto", { url: null });
+    if (!error) { await refresh(); setMsg({ t: "ok", m: "Foto quitada: se muestran tus iniciales." }); }
+  }
+
   return (
     <div className="pagina">
       <div className="perfil-mas panel">
-        <Avatar nombre={profile.full_name} url={profile.avatar_url} size={56} />
-        <div><b>{profile.full_name}</b><small>{profile.puesto}</small><span className="chip">{nombrePerfil[profile.role]}</span></div>
+        <Avatar nombre={profile.full_name} url={profile.avatar_url} size={64} />
+        <div>
+          <b>{profile.full_name}</b><small>{profile.puesto}</small><span className="chip">{nombrePerfil[profile.role]}</span>
+          <div className="mi-foto">
+            <label className="btn secundario">
+              {subiendo ? "Subiendo…" : profile.avatar_url ? "Cambiar foto" : "Agregar foto"}
+              <input type="file" accept="image/*" hidden disabled={subiendo} onChange={(e) => subirFoto(e.target.files?.[0])} />
+            </label>
+            {profile.avatar_url && <button className="btn texto" onClick={quitarFoto}>Quitar</button>}
+          </div>
+        </div>
       </div>
+      {msg && <Mensaje tipo={msg.t}>{msg.m}</Mensaje>}
       <ul className="lista panel">
         <li><Link to="/calendario" className="fila"><Icono n="calendario" /><span className="fila-txt"><b>Calendario</b><small>Eventos y confirmación de asistencia</small></span><Icono n="adelante" size={18} /></Link></li>
         <li><Link to="/buscar" className="fila"><Icono n="buscar" /><span className="fila-txt"><b>Buscar</b><small>Avisos y documentos por título y contenido</small></span><Icono n="adelante" size={18} /></Link></li>

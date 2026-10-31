@@ -7,6 +7,7 @@ import { descargar } from "../lib/archivos";
 import { subirVersion, ACEPTA } from "../lib/subir";
 import { Cabecera, Cargando, Mensaje, Vacio } from "../components/Comunes";
 import { Icono } from "../components/Icono";
+import { SelectorArchivo } from "../components/SelectorArchivo";
 
 export default function Documento() {
   const { id } = useParams();
@@ -92,14 +93,14 @@ export default function Documento() {
           <form className="panel form" onSubmit={nuevaVersion}>
             <h2 className="h3">Subir versión nueva</h2>
             <p className="ayuda">Pasará a ser la versión {(versiones[0]?.version_number ?? 0) + 1} vigente. La actual se conserva en el historial.</p>
-            <label>Archivo<input type="file" required accept={ACEPTA} onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
+            <SelectorArchivo etiqueta="Archivo de la nueva versión" accept={ACEPTA} requerido archivos={file ? [file] : []} onCambio={(f) => setFile(f[0] ?? null)} />
             <label>Qué cambió (opcional)<input value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Ej.: nuevo plazo de pago" /></label>
             <div className="acciones">
               <button className="btn primario" disabled={subiendo}>{subiendo ? "Subiendo…" : "Subir versión"}</button>
               <button type="button" className="btn secundario" onClick={() => setForm(false)}>Cancelar</button>
             </div>
           </form>
-        ) : <button className="btn secundario" onClick={() => setForm(true)}><Icono n="subir" size={18} /> Subir versión nueva</button>
+        ) : <button className="btn primario grande" onClick={() => setForm(true)}><Icono n="subir" size={18} /> Subir versión nueva</button>
       )}
 
       <section className="bloque" aria-labelledby="t-hist">

@@ -6,6 +6,7 @@ import { fecha, tamano } from "../lib/formato";
 import { subirVersion, ACEPTA } from "../lib/subir";
 import { Cabecera, Cargando, Mensaje, Vacio } from "../components/Comunes";
 import { Icono } from "../components/Icono";
+import { SelectorArchivo } from "../components/SelectorArchivo";
 
 export default function Carpeta() {
   const { id } = useParams();
@@ -50,13 +51,14 @@ export default function Carpeta() {
       <Cabecera titulo={carpeta.name} volver="/documentos" sub={carpeta.description}>
         {esGestor && !nuevo && <button className="btn primario" onClick={() => setNuevo(true)}><Icono n="mas_" size={18} /> Nuevo documento</button>}
       </Cabecera>
+      {esGestor && <p className="ayuda nota-version">¿Querés actualizar un documento que ya existe? Entrá en él y usá <b>Subir versión nueva</b>: así se conserva el historial.</p>}
 
       {nuevo && (
         <form className="panel form" onSubmit={crear}>
           <h2 className="h3">Nuevo documento en {carpeta.name}</h2>
           <label>Título<input required value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ej.: Procedimiento de reserva de aulas" /></label>
           <label>Descripción breve (opcional)<input value={desc} onChange={(e) => setDesc(e.target.value)} /></label>
-          <label>Archivo<input type="file" required accept={ACEPTA} onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
+          <SelectorArchivo etiqueta="Archivo" accept={ACEPTA} requerido archivos={file ? [file] : []} onCambio={(f) => setFile(f[0] ?? null)} />
           <small className="ayuda">PDF, Word, Excel, PowerPoint, texto o imagen, hasta 50 MB. El texto de PDF y Word se incluye en la búsqueda.</small>
           {error && <Mensaje tipo="error">{error}</Mensaje>}
           <div className="acciones">

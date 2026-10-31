@@ -1,0 +1,31 @@
+/* ===== Selector de archivos ===== */
+.selector { display: flex; flex-direction: column; gap: 6px; }
+.selector-etiqueta { font-weight: 600; font-size: .92rem; }
+.selector-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.form label.selector-zona, .selector-zona {
+  display: flex; flex-direction: row; align-items: center; gap: 14px; padding: 16px;
+  border: 2px dashed var(--linea); border-radius: var(--r-panel); background: var(--fondo);
+  cursor: pointer; font-weight: 400;
+}
+.selector-zona:hover { border-color: var(--principal); }
+.selector-input:focus-visible + .selector-zona { outline: 3px solid color-mix(in srgb, var(--principal) 55%, white); outline-offset: 2px; }
+.selector-zona.lleno { border-style: solid; border-color: var(--principal); background: var(--principal-suave); }
+.selector-ico { width: 44px; height: 44px; flex: none; border-radius: 10px; background: var(--superficie); color: var(--principal); display: grid; place-items: center; }
+.selector-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.selector-txt b { color: var(--tinta); font-weight: 600; word-break: break-word; }
+.selector-txt b small { color: var(--tinta-2); font-weight: 400; }
+.selector-txt > small { color: var(--tinta-2); }
+.selector-cambiar { color: var(--principal) !important; font-weight: 600; }
+
+/* ===== Asistencia ===== */
+.rsvp-ayuda { margin: 0; font-size: .82rem; color: var(--tinta-2); }
+
+/* ===== Mi foto ===== */
+.mi-foto { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.mi-foto .btn { min-height: 36px; padding: 0 12px; font-size: .88rem; }
+
+/* ===== Calendario: "Noviembre de 2026" y reloj alineado ===== */
+.mes { text-transform: none; }
+.mes::first-letter { text-transform: uppercase; }
+.meta { align-items: flex-start; }
+.meta svg { flex: none; margin-top: 3px; }

@@ -15,7 +15,7 @@ export default function Documentos() {
   if (!carpetas) return <Cargando />;
   return (
     <div className="pagina">
-      <Cabecera titulo="Documentos" sub={<>Ves las carpetas del perfil <b>{profile && nombrePerfil[profile.role]}</b>. Siempre se abre la versión vigente.</>}>
+      <Cabecera titulo="Documentos" sub={<span>Ves las carpetas del perfil <b>{profile && nombrePerfil[profile.role]}</b>. Siempre se abre la versión vigente.</span>}>
         {esAdmin && <Link to="/gestion/carpetas" className="btn secundario">Carpetas y permisos</Link>}
       </Cabecera>
       {carpetas.length === 0 ? <Vacio titulo="Todavía no tenés carpetas asignadas." /> : (

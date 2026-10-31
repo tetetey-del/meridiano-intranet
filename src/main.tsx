@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { marca } from "./marca";
 import "./estilos.css";
+import "./estilos-extra.css";
 
 // Aplica los colores de marca desde src/marca.ts
 const r = document.documentElement.style;

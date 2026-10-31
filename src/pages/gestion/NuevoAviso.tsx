@@ -2,8 +2,9 @@ import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, CATEGORIAS } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
-import { slug, tamano } from "../../lib/formato";
+import { slug } from "../../lib/formato";
 import { Cabecera, Mensaje } from "../../components/Comunes";
+import { SelectorArchivo } from "../../components/SelectorArchivo";
 
 export default function NuevoAviso() {
   const { profile } = useAuth();
@@ -37,8 +38,7 @@ export default function NuevoAviso() {
           <select value={cat} onChange={(e) => setCat(e.target.value)}>{CATEGORIAS.map((c) => <option key={c}>{c}</option>)}</select>
         </label>
         <label>Texto del aviso<textarea required rows={8} value={cuerpo} onChange={(e) => setCuerpo(e.target.value)} placeholder="Dejá una línea en blanco para separar párrafos." /></label>
-        <label>Adjuntos (opcional)<input type="file" multiple onChange={(e) => setFiles([...(e.target.files ?? [])])} /></label>
-        {files.length > 0 && <ul className="ayuda">{files.map((f) => <li key={f.name}>{f.name} · {tamano(f.size)}</li>)}</ul>}
+        <SelectorArchivo etiqueta="Adjuntos (opcional)" multiple archivos={files} onCambio={setFiles} />
         <label className="check-grande">
           <input type="checkbox" checked={imp} onChange={(e) => setImp(e.target.checked)} />
           <span><b>Importante: pedir confirmación de lectura</b><small>Cada persona verá un botón para confirmar y podrás ver el recuento de quién lo leyó.</small></span>

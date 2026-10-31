@@ -42,8 +42,14 @@ export default function Calendario() {
 
   async function responder(ev: string, status: "si" | "no") {
     if (!profile) return;
-    setMio((m) => ({ ...m, [ev]: status }));
-    await supabase.from("event_rsvps").upsert({ event_id: ev, user_id: profile.id, status, updated_at: new Date().toISOString() });
+    if (mio[ev] === status) {
+      // Tocar de nuevo la opción elegida quita la respuesta
+      setMio((m) => { const c = { ...m }; delete c[ev]; return c; });
+      await supabase.from("event_rsvps").delete().eq("event_id", ev).eq("user_id", profile.id);
+    } else {
+      setMio((m) => ({ ...m, [ev]: status }));
+      await supabase.from("event_rsvps").upsert({ event_id: ev, user_id: profile.id, status, updated_at: new Date().toISOString() });
+    }
     cargar();
   }
 
@@ -82,9 +88,11 @@ export default function Calendario() {
                       <div className="rsvp" role="group" aria-label="¿Vas a asistir?">
                         <button className={"rsvp-btn" + (yo === "si" ? " si" : "")} aria-pressed={yo === "si"} onClick={() => responder(e.id, "si")}>
                           {yo === "si" && <Icono n="check" size={16} />} Asistiré</button>
-                        <button className={"rsvp-btn" + (yo === "no" ? " no" : "")} aria-pressed={yo === "no"} onClick={() => responder(e.id, "no")}>No asistiré</button>
+                        <button className={"rsvp-btn" + (yo === "no" ? " no" : "")} aria-pressed={yo === "no"} onClick={() => responder(e.id, "no")}>
+                          {yo === "no" && <Icono n="check" size={16} />} No asistiré</button>
                       </div>
                     )}
+                    {!pasados && yo && <p className="rsvp-ayuda">Tocá de nuevo tu respuesta para quitarla.</p>}
                     <p className="rsvp-cuenta">{r ? `${r.si} asistirán · ${r.no} no asistirán` : ""}</p>
                     {esGestor && nombres[e.id] && (
                       <details className="quien">
