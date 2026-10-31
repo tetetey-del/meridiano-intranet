@@ -1,32 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { supabase, nombrePerfil } from "../lib/supabase";
+import { avisosPendientes, nombrePerfil } from "../lib/datos";
 import { marca } from "../marca";
 import { Icono } from "./Icono";
 import { Avatar } from "./Avatar";
 
-export function usePendientes() {
-  const { profile } = useAuth();
-  const loc = useLocation();
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    if (!profile) return;
-    (async () => {
-      const [{ data: imp }, { data: leidos }] = await Promise.all([
-        supabase.from("announcements").select("id").eq("is_important", true),
-        supabase.from("announcement_reads").select("announcement_id").eq("user_id", profile.id),
-      ]);
-      const set = new Set((leidos ?? []).map((r) => r.announcement_id));
-      setN((imp ?? []).filter((a) => !set.has(a.id)).length);
-    })();
-  }, [profile, loc.pathname]);
-  return n;
-}
-
 export function Layout() {
   const { profile, esGestor, signOut } = useAuth();
-  const pendientes = usePendientes();
+  const pendientes = profile ? avisosPendientes().length : 0;
   const loc = useLocation();
   useEffect(() => { window.scrollTo(0, 0); }, [loc.pathname]);
 

@@ -1,28 +1,15 @@
-import { supabase } from "./supabase";
-
 /**
- * Descarga segura: se pide un enlace firmado que caduca en 60 s.
- * Supabase solo lo entrega si las reglas de permisos (RLS) permiten ver ese archivo.
+ * Abre o descarga un archivo que la intranet ya entregó tras comprobar permisos (ver datos.ts).
+ * Se crea una dirección temporal en memoria (blob:) que se descarta enseguida: no existe ninguna URL fija del archivo.
  */
-export async function descargar(bucket: string, path: string, nombre: string, abrir = false) {
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .createSignedUrl(path, 60, abrir ? undefined : { download: nombre });
-  if (error || !data) throw new Error("No tenés permiso para abrir este archivo o ya no existe.");
-  if (abrir) { window.location.assign(data.signedUrl); return; }
-  // Descarga real: se trae el archivo y se guarda con su nombre.
-  // En iPhone, Safari pregunta "¿Descargar?" y lo guarda en Archivos › Descargas en vez de abrirlo.
-  try {
-    const res = await fetch(data.signedUrl);
-    if (!res.ok) throw new Error();
-    const url = URL.createObjectURL(await res.blob());
-    const a = document.createElement("a");
-    a.href = url; a.download = nombre;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
-  } catch {
-    window.location.assign(data.signedUrl);
-  }
+export function entregarArchivo(blob: Blob, nombre: string, abrir = false) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  if (abrir) a.target = "_blank"; else a.download = nombre;
+  a.rel = "noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 /** Extrae el texto de PDF, Word (.docx) o texto plano para que la búsqueda encuentre por contenido. */
@@ -40,17 +27,19 @@ export async function extraerTexto(file: File): Promise<string> {
         const c = await page.getTextContent();
         partes.push(c.items.map((it: any) => ("str" in it ? it.str : "")).join(" "));
       }
-      return partes.join("\n").slice(0, 200000);
+      return partes.join("\n").slice(0, 100000);
     }
     if (n.endsWith(".docx")) {
       // @ts-ignore — build para navegador sin tipos
       const mammoth = (await import("mammoth/mammoth.browser")).default;
       const r = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-      return String(r.value).slice(0, 200000);
+      return String(r.value).slice(0, 100000);
     }
-    if (n.endsWith(".txt") || n.endsWith(".md") || n.endsWith(".csv")) return (await file.text()).slice(0, 200000);
+    if (n.endsWith(".txt") || n.endsWith(".md") || n.endsWith(".csv")) return (await file.text()).slice(0, 100000);
   } catch (e) {
     console.warn("No se pudo extraer texto", e);
   }
   return "";
 }
+
+export const ACEPTA = ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png";

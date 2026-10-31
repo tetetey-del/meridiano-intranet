@@ -2,7 +2,6 @@ import { ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { Layout } from "./components/Layout";
-import { Cargando } from "./components/Comunes";
 import Login from "./pages/Login";
 import Inicio from "./pages/Inicio";
 import Avisos from "./pages/Avisos";
@@ -28,9 +27,8 @@ function Solo({ nivel, children }: { nivel: "gestor" | "admin"; children: ReactN
 }
 
 function Rutas() {
-  const { session, profile, loading } = useAuth();
-  if (loading) return <div className="pantalla-carga"><Cargando /></div>;
-  if (!session || !profile) return <Login />;
+  const { profile } = useAuth();
+  if (!profile) return <Login />;
   return (
     <Routes>
       <Route element={<Layout />}>

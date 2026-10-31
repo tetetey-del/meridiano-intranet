@@ -2,7 +2,7 @@
  * MARCA DEL CLIENTE — todo lo que se reemplaza al recibir los materiales reales.
  * - Logo: reemplazar el archivo public/marca/logo.svg (o cambiar la ruta de `logo`).
  * - Colores: cambiar los valores de `colores` (se aplican a toda la app).
- * - Fotos del directorio: se suben desde Gestión › Usuarios. Sin foto se muestran iniciales.
+ * - Fotos del directorio: cada persona desde Más › Agregar foto. Sin foto se muestran iniciales.
  */
 export const marca = {
   nombre: "Academia Meridiano",
@@ -25,12 +25,4 @@ export const marca = {
     { perfil: "Administración", email: "laura.mendez@academiameridiano.cr" },
   ],
   contrasenaDemo: "Meridiano2026!",
-};
-
-// Conexión pública con Supabase (la clave "anon" es pública por diseño; la seguridad está en las reglas RLS).
-export const supabaseConfig = {
-  url: import.meta.env.VITE_SUPABASE_URL || "https://rfctcoprhkdndcymueat.supabase.co",
-  anonKey:
-    import.meta.env.VITE_SUPABASE_ANON_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJmY3Rjb3ByaGtkbmRjeW11ZWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0MzI4OTgsImV4cCI6MjEwOTAwODg5OH0.NCQgvgfuWTkmCdIvKTRNHPasoeBbUix6z9WAAGT7mT0",
 };
