@@ -49,3 +49,6 @@
 
 /* ===== Inicio: foto junto al saludo ===== */
 .saludo-fila { display: flex; align-items: center; gap: 14px; }
+
+/* ===== Gestión: reinicio de la demo ===== */
+.demo-reinicio { padding: 18px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }

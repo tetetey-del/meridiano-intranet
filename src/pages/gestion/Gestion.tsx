@@ -1,10 +1,16 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../lib/auth";
-import { Cabecera } from "../../components/Comunes";
+import { supabase } from "../../lib/supabase";
+import { marca } from "../../marca";
+import { Cabecera, Mensaje } from "../../components/Comunes";
 import { Icono } from "../../components/Icono";
 
 export default function Gestion() {
-  const { esAdmin } = useAuth();
+  const { esAdmin, refresh } = useAuth();
+  const [reiniciando, setReiniciando] = useState(false);
+  const [msg, setMsg] = useState<{ t: "ok" | "error"; m: string } | null>(null);
+
   const op = [
     { to: "/gestion/aviso", n: "avisos", t: "Publicar un aviso", d: "Con categoría, adjuntos y confirmación de lectura si es importante." },
     { to: "/documentos", n: "carpeta", t: "Subir un documento o una versión nueva", d: "Entrá a la carpeta o al documento y usá el botón de subir." },
@@ -15,6 +21,18 @@ export default function Gestion() {
       { to: "/gestion/lecturas", n: "exportar", t: "Lecturas y exportación", d: "Quién leyó cada aviso importante. Descarga en Excel (CSV)." },
     ] : []),
   ];
+
+  // Solo en la demo: vuelve a dejar personas, carpetas, documentos, avisos y eventos de ejemplo como al principio
+  async function reiniciar() {
+    if (!confirm("¿Reiniciar los datos de ejemplo? Se borra todo lo creado en las pruebas (avisos, documentos, versiones, eventos, cuentas y fotos) y vuelven los datos originales.")) return;
+    setReiniciando(true); setMsg(null);
+    const { error } = await supabase.rpc("reiniciar_datos_ejemplo");
+    setReiniciando(false);
+    if (error) return setMsg({ t: "error", m: "No se pudieron reiniciar los datos." });
+    await refresh();
+    setMsg({ t: "ok", m: "Datos de ejemplo reiniciados. Todo quedó como al principio." });
+  }
+
   return (
     <div className="pagina estrecha">
       <Cabecera titulo="Gestión" sub="¿Qué querés hacer?" />
@@ -27,6 +45,17 @@ export default function Gestion() {
           </Link></li>
         ))}
       </ul>
+
+      {esAdmin && marca.mostrarCuentasDemo && (
+        <section className="panel demo-reinicio">
+          <h2 className="h3">Datos de ejemplo</h2>
+          <p className="ayuda">Esta es una demo. Después de probar, podés dejar todo como al principio: el equipo de 14 personas, las 5 carpetas, los documentos con sus versiones, los avisos con sus lecturas y los eventos.</p>
+          {msg && <Mensaje tipo={msg.t}>{msg.m}</Mensaje>}
+          <button className="btn secundario" onClick={reiniciar} disabled={reiniciando}>
+            {reiniciando ? "Reiniciando…" : "Reiniciar datos de ejemplo"}
+          </button>
+        </section>
+      )}
     </div>
   );
 }

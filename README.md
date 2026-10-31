@@ -26,6 +26,25 @@ El resto del equipo de ejemplo (14 personas) usa la misma contraseña.
 6. **Móvil.** Diseño pensado primero para el celular: barra de navegación inferior, botones grandes, descarga directa, correo y teléfono del directorio abren la app del móvil.
 7. **Entrega.** Este repositorio + despliegue en Vercel.
 
+## Qué está simulado
+
+- **La academia y su marca:** nombre, logotipo y colores son inventados para la demo, libres de derechos.
+- **El equipo:** las 14 personas, sus correos (dominio ficticio `@academiameridiano.cr`, no reciben correo) y sus teléfonos son ficticios. Las fotos del directorio son iniciales generadas.
+- **El contenido:** los 8 documentos (PDF con texto real, para probar la búsqueda), los 5 avisos, las lecturas ya confirmadas y los 4 eventos son de ejemplo.
+- **No se envían correos.** Administración da de alta las cuentas con una contraseña inicial y la cambia si alguien la olvida.
+- **Lo que sí es real:** la autenticación, la base de datos con sus permisos por perfil, el almacenamiento privado de archivos y el tiempo real funcionan sobre un proyecto de Supabase, así que lo que se prueba se guarda de verdad.
+
+## Cómo reiniciar los datos de ejemplo
+
+Entrá con la cuenta de **Administración** (`laura.mendez@academiameridiano.cr`) y andá a **Gestión → Reiniciar datos de ejemplo**. La demo vuelve a como estaba al principio:
+
+- las 14 cuentas con sus datos y la contraseña `Meridiano2026!`, sin fotos (se borran las cuentas creadas en las pruebas y se reactivan las desactivadas);
+- las 5 carpetas con sus permisos originales;
+- los 8 documentos con sus versiones (matrícula: v1 guardada y v2 vigente);
+- los 5 avisos con sus lecturas (9 de 14 y 5 de 14) y los 4 eventos con sus respuestas.
+
+Solo Administración puede usarlo (lo comprueba la base de datos) y el botón desaparece al poner `mostrarCuentasDemo: false`. La función es `reiniciar_datos_ejemplo()` en `supabase/migrations/20261031_reiniciar_datos_ejemplo.sql`. Los archivos subidos durante las pruebas quedan en el almacenamiento sin ningún enlace hacia ellos.
+
 ## Tecnología
 
 - **Frontend:** React 18 + TypeScript + Vite, CSS propio (sin frameworks de UI).
