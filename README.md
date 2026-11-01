@@ -13,7 +13,7 @@ Contraseña de todas las cuentas: `Meridiano2026!` (en la pantalla de acceso hay
 | Perfil | Correo | Qué ve |
 |---|---|---|
 | Equipo | `sofia.rojas@academiameridiano.cr` | 3 carpetas. Lee, descarga, confirma avisos y asistencia, pone su foto |
-| Responsables | `andres.vargas@academiameridiano.cr` | 4 carpetas. Además publica avisos, documentos, versiones y eventos y ve quién leyó |
+| Responsables | `andres.vargas@academiameridiano.cr` | 4 carpetas. Además publica avisos, documentos, versiones y eventos, ve quién leyó y envía el resumen semanal (simulado) |
 | Administración | `laura.mendez@academiameridiano.cr` | 5 carpetas. Además gestiona usuarios, carpetas y permisos, exporta lecturas y reinicia la demo |
 
 El resto del equipo de ejemplo (14 personas) usa la misma contraseña.
@@ -34,10 +34,22 @@ El resto del equipo de ejemplo (14 personas) usa la misma contraseña.
 - **Permisos:** se comprueban en `src/lib/datos.ts` en cada lectura y escritura, no solo ocultando botones: las pantallas solo reciben lo que el perfil puede ver.
 - **Archivos:** se guardan en base64 dentro del `localStorage`, con un máximo de **1,5 MB por archivo** (el navegador da unos 5 MB en total). Si no queda espacio, la app lo avisa.
 - **Recuento "en tiempo real":** las pestañas del mismo navegador se enteran de los cambios por el evento `storage`; no hay servidor.
-- **Correos: no se envían.** No hay correos de bienvenida, de recuperación de contraseña ni de aviso. Administración crea la cuenta con una contraseña inicial en *Gestión → Usuarios* y se la pasa a la persona; si alguien la olvida, Administración le pone una nueva desde la misma pantalla. Los avisos nuevos se ven al entrar (en *Inicio* y con un número en *Avisos*).
+- **Correos: no se envían.** No hay correos de bienvenida, de recuperación de contraseña ni de aviso, y el resumen semanal se simula (ver la sección siguiente). Administración crea la cuenta con una contraseña inicial en *Gestión → Usuarios* y se la pasa a la persona; si alguien la olvida, Administración le pone una nueva desde la misma pantalla. Los avisos nuevos se ven al entrar (en *Inicio* y con un número en *Avisos*).
 - **Pagos y WhatsApp: no hay.** El encargo no los incluye. Los botones de correo y teléfono del *Directorio* abren la app de correo o de llamadas del dispositivo.
 - **Datos por navegador:** cada navegador tiene su propia copia de los datos; lo que se cambia en un dispositivo no se ve en otro.
 - **Contenido de ejemplo:** las 14 personas, sus correos (dominio ficticio) y teléfonos, los 8 documentos (PDF generados en el navegador a partir de su texto), los 5 avisos con sus lecturas y los 4 eventos están en `src/datos/ejemplo.ts`. Las fotos del directorio son iniciales generadas.
+
+## Resumen semanal por correo (simulado)
+
+El encargo incluye un resumen semanal de novedades por correo. Como la demo no envía correos, se simula así:
+
+- **Dónde:** *Gestión → Resumen semanal por correo* (Responsables y Administración).
+- **Vista previa:** muestra el correo tal como llegaría (De, Para, Asunto y cuerpo) con las novedades de los **últimos 7 días**: avisos nuevos, documentos nuevos o con versión nueva vigente, eventos nuevos en el calendario y eventos de los próximos 7 días. Cada enlace lleva a la pantalla correspondiente.
+- **Por perfil:** con los botones *Equipo / Responsables / Administración* se ve el correo que recibiría cada perfil. Respeta los mismos permisos que la intranet: los documentos de carpetas restringidas solo aparecen en el resumen de quien puede verlas.
+- **Enviar resumen:** no sale ningún correo. El envío queda **registrado como enviado** (fecha, quién lo envió, destinatarios por perfil y cantidad de novedades) en *Envíos anteriores*, guardado en el `localStorage` como el resto de los datos.
+- **Datos de ejemplo:** incluyen un envío de la semana anterior para que se vea el historial. Al reiniciar los datos, el historial vuelve a ese único envío.
+
+El cálculo está en `src/lib/datos.ts` (`resumenSemanal`, `enviarResumen`) y la pantalla en `src/pages/gestion/Resumen.tsx`.
 
 ## Datos de ejemplo y cómo reiniciarlos
 

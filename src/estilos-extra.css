@@ -52,3 +52,22 @@
 
 /* ===== Gestión: reinicio de la demo ===== */
 .demo-reinicio { padding: 18px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+
+/* ===== Resumen semanal (correo simulado) ===== */
+.aviso-simulado { margin: 0; display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--r-ctrl);
+  background: var(--acento-suave); color: #6B5530; font-size: .92rem; }
+.aviso-simulado svg { flex: none; margin-top: 2px; }
+.segmentos { flex-wrap: wrap; }
+.correo { overflow: hidden; }
+.correo-cab { padding: 14px 18px; background: var(--fondo); border-bottom: 1px solid var(--linea); display: flex; flex-direction: column; gap: 4px; font-size: .92rem; }
+.correo-cab p { margin: 0; overflow-wrap: anywhere; }
+.correo-cab span { display: inline-block; min-width: 56px; color: var(--tinta-2); }
+.correo-cuerpo { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+.correo-cuerpo > p { margin: 0; }
+.correo-cuerpo section { display: flex; flex-direction: column; gap: 8px; }
+.correo-cuerpo ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.correo-cuerpo li { display: flex; flex-direction: column; gap: 1px; padding-left: 12px; border-left: 3px solid var(--principal-suave); }
+.correo-cuerpo li a { color: var(--principal); font-weight: 600; text-decoration: none; }
+.correo-cuerpo li a:hover { text-decoration: underline; }
+.correo-cuerpo li small { color: var(--tinta-2); }
+.correo-cuerpo li small::first-letter { text-transform: uppercase; }

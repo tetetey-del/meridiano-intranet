@@ -14,6 +14,7 @@ export default function Gestion() {
     { to: "/gestion/aviso", n: "avisos", t: "Publicar un aviso", d: "Con categoría, adjuntos y confirmación de lectura si es importante." },
     { to: "/documentos", n: "carpeta", t: "Subir un documento o una versión nueva", d: "Entrá a la carpeta o al documento y usá el botón de subir." },
     { to: "/gestion/evento", n: "calendario", t: "Crear un evento", d: "Aparece en el calendario para que el equipo confirme asistencia." },
+    { to: "/gestion/resumen", n: "correo", t: "Resumen semanal por correo", d: "Vista previa de las novedades de la semana y envío al equipo (simulado)." },
     ...(esAdmin ? [
       { to: "/gestion/usuarios", n: "personas", t: "Usuarios y perfiles", d: "Dar de alta, cambiar perfil, foto y datos, desactivar o cambiar contraseña." },
       { to: "/gestion/carpetas", n: "candado", t: "Carpetas y permisos", d: "Crear carpetas y elegir qué perfiles ven cada una." },

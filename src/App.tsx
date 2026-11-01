@@ -19,6 +19,7 @@ import NuevoEvento from "./pages/gestion/NuevoEvento";
 import Usuarios from "./pages/gestion/Usuarios";
 import Carpetas from "./pages/gestion/Carpetas";
 import Lecturas from "./pages/gestion/Lecturas";
+import Resumen from "./pages/gestion/Resumen";
 
 function Solo({ nivel, children }: { nivel: "gestor" | "admin"; children: ReactNode }) {
   const { esGestor, esAdmin } = useAuth();
@@ -45,6 +46,7 @@ function Rutas() {
         <Route path="gestion" element={<Solo nivel="gestor"><Gestion /></Solo>} />
         <Route path="gestion/aviso" element={<Solo nivel="gestor"><NuevoAviso /></Solo>} />
         <Route path="gestion/evento" element={<Solo nivel="gestor"><NuevoEvento /></Solo>} />
+        <Route path="gestion/resumen" element={<Solo nivel="gestor"><Resumen /></Solo>} />
         <Route path="gestion/usuarios" element={<Solo nivel="admin"><Usuarios /></Solo>} />
         <Route path="gestion/carpetas" element={<Solo nivel="admin"><Carpetas /></Solo>} />
         <Route path="gestion/lecturas" element={<Solo nivel="admin"><Lecturas /></Solo>} />
