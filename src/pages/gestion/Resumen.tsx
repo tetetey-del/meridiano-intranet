@@ -8,6 +8,7 @@ import { Cabecera, Mensaje } from "../../components/Comunes";
 import { Icono } from "../../components/Icono";
 
 const PERFILES: Perfil[] = ["equipo", "responsable", "admin"];
+const cuenta = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 const corto = (iso: string) => new Date(iso).toLocaleDateString("es-CR", { day: "numeric", month: "short", timeZone: marca.zonaHoraria });
 
 /**
@@ -125,8 +126,8 @@ export default function Resumen() {
               <li key={e.id} className="fila">
                 <Icono n="check" className="ico-doc" />
                 <span className="fila-txt">
-                  <b>{fechaHora(e.enviado_at)} · {e.destinatarios.equipo + e.destinatarios.responsable + e.destinatarios.admin} personas</b>
-                  <small>Semana {corto(e.desde)} – {corto(e.hasta)} · {e.avisos} avisos, {e.documentos} documentos, {e.eventos} eventos · por {persona(e.enviado_por)?.full_name ?? "—"}</small>
+                  <b>{fechaHora(e.enviado_at)} · {cuenta(e.destinatarios.equipo + e.destinatarios.responsable + e.destinatarios.admin, "persona", "personas")}</b>
+                  <small>Semana {corto(e.desde)} – {corto(e.hasta)} · {cuenta(e.avisos, "aviso", "avisos")}, {cuenta(e.documentos, "documento", "documentos")}, {cuenta(e.eventos, "evento", "eventos")} · por {persona(e.enviado_por)?.full_name ?? "—"}</small>
                 </span>
                 <span className="chip">Simulado</span>
               </li>
