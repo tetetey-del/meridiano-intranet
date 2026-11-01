@@ -4,6 +4,7 @@
  *  - localStorage "meridiano:datos"        → personas, carpetas, documentos, versiones, avisos, lecturas, eventos…
  *  - localStorage "meridiano:archivo:<id>" → cada archivo (PDF, Word…) en base64, por separado
  *  - sessionStorage "meridiano:sesion"     → quién entró (caduca al cerrar la pestaña)
+ *  - El "resumen semanal por correo" se simula: se arma la vista previa y el envío queda registrado, sin mandar correos.
  * Los permisos por perfil se comprueban aquí, en cada lectura y escritura: las pantallas solo reciben lo que el perfil puede ver.
  */
 import { EJEMPLO } from "../datos/ejemplo";
@@ -24,13 +25,19 @@ export type Version = {
 export type Aviso = { id: string; title: string; body: string; category: string; is_important: boolean; author_id: string | null; created_at: string };
 export type Adjunto = { id: string; announcement_id: string; file_id: string; file_name: string; size_bytes: number };
 export type Lectura = { announcement_id: string; user_id: string; read_at: string };
-export type Evento = { id: string; title: string; description: string; location: string; starts_at: string; ends_at: string | null };
+export type Evento = { id: string; title: string; description: string; location: string; starts_at: string; ends_at: string | null; created_at?: string };
 export type Asistencia = { event_id: string; user_id: string; status: "si" | "no" };
+/** Registro de un resumen semanal "enviado" (simulado: no sale ningún correo). */
+export type EnvioResumen = {
+  id: string; enviado_at: string; enviado_por: string; desde: string; hasta: string;
+  destinatarios: Record<Perfil, number>; avisos: number; documentos: number; eventos: number;
+};
 
 type Datos = {
   version: 1;
   usuarios: Usuario[]; carpetas: Folder[]; documentos: Doc[]; versiones: Version[];
   avisos: Aviso[]; adjuntos: Adjunto[]; lecturas: Lectura[]; eventos: Evento[]; asistencias: Asistencia[];
+  resumenes: EnvioResumen[];
 };
 
 export const nombrePerfil: Record<Perfil, string> = { equipo: "Equipo", responsable: "Responsables", admin: "Administración" };
@@ -53,7 +60,11 @@ function leer(): Datos {
   if (cache) return cache;
   const crudo = localStorage.getItem(CLAVE);
   if (crudo) {
-    try { cache = JSON.parse(crudo) as Datos; return cache; } catch { /* datos dañados: se recargan los ejemplos */ }
+    try {
+      cache = JSON.parse(crudo) as Datos;
+      cache.resumenes ??= []; // datos guardados por una versión anterior de la demo
+      return cache;
+    } catch { /* datos dañados: se recargan los ejemplos */ }
   }
   cache = sembrar();
   return cache;
@@ -141,16 +152,19 @@ function sembrar(): Datos {
         .map((usr, i) => ({ announcement_id: "av2", user_id: id(usr), read_at: hace(10 * HORA - i * HORA) })),
     ],
     eventos: [
-      { id: "ev1", title: "Claustro de profesores", description: "Revisión del trimestre y planificación de diciembre.", location: "Sala de reuniones, 2.º piso", starts_at: "2026-11-05T23:00:00.000Z", ends_at: "2026-11-06T00:30:00.000Z" },
-      { id: "ev2", title: "Capacitación: nueva matrícula en línea", description: "Sesión práctica de 1 hora para secretaría y coordinación.", location: "Aula 3", starts_at: "2026-11-10T16:00:00.000Z", ends_at: "2026-11-10T17:00:00.000Z" },
-      { id: "ev3", title: "Simulacro general", description: "Simulacro de todas las convocatorias activas.", location: "Aula magna", starts_at: "2026-11-27T14:00:00.000Z", ends_at: "2026-11-27T17:00:00.000Z" },
-      { id: "ev4", title: "Cena de fin de año del equipo", description: "Cena informal para todo el personal.", location: "Restaurante en Barrio Escalante", starts_at: "2026-12-12T01:30:00.000Z", ends_at: null },
+      { id: "ev1", created_at: hace(10 * DIA), title: "Claustro de profesores", description: "Revisión del trimestre y planificación de diciembre.", location: "Sala de reuniones, 2.º piso", starts_at: "2026-11-05T23:00:00.000Z", ends_at: "2026-11-06T00:30:00.000Z" },
+      { id: "ev2", created_at: hace(4 * DIA), title: "Capacitación: nueva matrícula en línea", description: "Sesión práctica de 1 hora para secretaría y coordinación.", location: "Aula 3", starts_at: "2026-11-10T16:00:00.000Z", ends_at: "2026-11-10T17:00:00.000Z" },
+      { id: "ev3", created_at: hace(2 * DIA), title: "Simulacro general", description: "Simulacro de todas las convocatorias activas.", location: "Aula magna", starts_at: "2026-11-27T14:00:00.000Z", ends_at: "2026-11-27T17:00:00.000Z" },
+      { id: "ev4", created_at: hace(15 * DIA), title: "Cena de fin de año del equipo", description: "Cena informal para todo el personal.", location: "Restaurante en Barrio Escalante", starts_at: "2026-12-12T01:30:00.000Z", ends_at: null },
     ],
     asistencias: [
       ...["laura.mendez", "andres.vargas", "mariela.jimenez", "paola.herrera", "daniela.quesada"].map((usr) => ({ event_id: "ev1", user_id: id(usr), status: "si" as const })),
       ...["carlos.araya", "valeria.chaves"].map((usr) => ({ event_id: "ev1", user_id: id(usr), status: "no" as const })),
       ...["natalia.villalobos", "andres.vargas", "mariela.jimenez"].map((usr) => ({ event_id: "ev2", user_id: id(usr), status: "si" as const })),
     ],
+    // Un envío anterior, para que se vea el historial
+    resumenes: [{ id: "rs1", enviado_at: hace(7 * DIA), enviado_por: id("laura.mendez"), desde: hace(14 * DIA), hasta: hace(7 * DIA),
+      destinatarios: { equipo: 9, responsable: 3, admin: 2 }, avisos: 2, documentos: 0, eventos: 1 }],
   };
   localStorage.setItem(CLAVE, JSON.stringify(d));
   return d;
@@ -441,7 +455,7 @@ export function eventos(pasados = false): Evento[] {
 
 export function crearEvento(e: Omit<Evento, "id">) {
   gestor();
-  cambiar((d) => d.eventos.push({ ...e, id: nuevoId(), title: e.title.trim() }));
+  cambiar((d) => d.eventos.push({ ...e, id: nuevoId(), title: e.title.trim(), created_at: ahora() }));
 }
 
 export function miAsistencia(eventoId: string): "si" | "no" | null {
@@ -469,6 +483,58 @@ export function respuestasAsistencia(eventoId: string) {
   const nombre = (id: string) => d.usuarios.find((u) => u.id === id)?.full_name ?? "";
   const as = d.asistencias.filter((a) => a.event_id === eventoId);
   return { si: as.filter((a) => a.status === "si").map((a) => nombre(a.user_id)), no: as.filter((a) => a.status === "no").map((a) => nombre(a.user_id)) };
+}
+
+/* ---------- Resumen semanal por correo (simulado) ---------- */
+
+export type ResumenSemanal = {
+  desde: string; hasta: string;
+  avisos: Aviso[];
+  documentos: (Doc & { carpeta: string; version: Version; nuevo: boolean })[];
+  eventosNuevos: Evento[];
+  proximos: Evento[];
+};
+
+/** Novedades de los últimos 7 días tal como las recibiría una persona con ese perfil (solo sus carpetas). */
+export function resumenSemanal(perfil: Perfil): ResumenSemanal {
+  gestor(); const d = leer();
+  const hasta = ahora(), desde = hace(7 * DIA), enUnaSemana = new Date(Date.now() + 7 * DIA).toISOString();
+  const carpetas = new Map(d.carpetas.filter((c) => perfil === "admin" || c.allowed_roles.includes(perfil)).map((c) => [c.id, c.name]));
+  const documentos = d.documentos.filter((doc) => carpetas.has(doc.folder_id)).flatMap((doc) => {
+    const version = d.versiones.filter((v) => v.document_id === doc.id && v.created_at >= desde)
+      .sort((a, b) => b.version_number - a.version_number)[0];
+    return version ? [{ ...doc, carpeta: carpetas.get(doc.folder_id)!, version, nuevo: doc.created_at >= desde }] : [];
+  }).sort((a, b) => b.version.created_at.localeCompare(a.version.created_at));
+  return {
+    desde, hasta, documentos,
+    avisos: d.avisos.filter((a) => a.created_at >= desde).sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    eventosNuevos: d.eventos.filter((e) => (e.created_at ?? "") >= desde).sort((a, b) => a.starts_at.localeCompare(b.starts_at)),
+    proximos: d.eventos.filter((e) => e.starts_at >= hasta && e.starts_at <= enUnaSemana).sort((a, b) => a.starts_at.localeCompare(b.starts_at)),
+  };
+}
+
+/** Cuántas personas activas lo recibirían, por perfil. */
+export function destinatariosResumen(): Record<Perfil, number> {
+  gestor();
+  const r: Record<Perfil, number> = { equipo: 0, responsable: 0, admin: 0 };
+  leer().usuarios.filter((u) => u.active).forEach((u) => { r[u.role]++; });
+  return r;
+}
+
+/** "Envía" el resumen: no sale ningún correo, solo queda registrado como enviado. */
+export function enviarResumen(): EnvioResumen {
+  const p = gestor();
+  const r = resumenSemanal("admin");
+  const envio: EnvioResumen = { id: nuevoId(), enviado_at: ahora(), enviado_por: p.id, desde: r.desde, hasta: r.hasta,
+    destinatarios: destinatariosResumen(), avisos: r.avisos.length, documentos: r.documentos.length,
+    eventos: new Set([...r.eventosNuevos, ...r.proximos].map((e) => e.id)).size };
+  cambiar((d) => d.resumenes.push(envio));
+  return envio;
+}
+
+export function enviosResumen(): EnvioResumen[] {
+  gestor();
+  return [...leer().resumenes].sort((a, b) => b.enviado_at.localeCompare(a.enviado_at));
 }
 
 /* ---------- Búsqueda por título y contenido (respeta permisos) ---------- */
